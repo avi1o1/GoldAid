@@ -1,0 +1,628 @@
+1. html backup:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThingSpeak Data Display</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            cursor: pointer; /* Add cursor style for clickable cells */
+        }
+
+        /* You can add more styles as needed */
+    </style>
+</head>
+<body>
+    <h1>GoldAid Safety System</h1>
+
+    <!-- Display fields in a table -->
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Temperature</th>
+                <th>Dia</th>
+                <th>Sys</th>
+                <th>SpO2 (%)</th>
+                <th>HR (bpm)</th>
+                <th>Field 6</th>
+                <th>Field 7</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr></tr>
+        </tbody>
+    </table>
+
+    <!-- Visible title for the ThingSpeak graph -->
+    <h2 id="graphTitle">Graph</h2>
+
+    <!-- Embed the ThingSpeak graph using an iframe -->
+    <iframe id="graphFrame" src="" width="100%" height="600px" frameborder="0" title="Graph"></iframe>
+
+    <script src="main.js"></script>
+</body>
+</html>
+
+
+============================ PARTIALLY WORKING ==============================================
+1. html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThingSpeak Data Display</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        .main-title {
+            margin-top: 20px; /* Adjust as needed */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">GoldAid Safety System</h1>
+
+        <!-- Display fields in a table -->
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Temperature</th>
+                    <th>Dia</th>
+                    <th>Sys</th>
+                    <th>SpO2 (%)</th>
+                    <th>HR (bpm)</th>
+                    <th>Field 6</th>
+                    <th>Field 7</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr></tr>
+            </tbody>
+        </table>
+
+        <!-- Visible title for the ThingSpeak graph -->
+        <h2 id="graphTitle" class="hidden">Graph</h2>
+
+        <!-- Embed the ThingSpeak graph using an iframe -->
+        <iframe id="graphFrame" src="" width="100%" height="600px" frameborder="0" title="Graph" class="hidden"></iframe>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
+
+---------------------------------------------------------------------------------------------------------------
+
+2. main.js:
+
+document.addEventListener("DOMContentLoaded", function () {
+    const channelID = '2409417';
+    const apiKey = '579VT12O9GUIU6IA';
+    const apiUrl = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${apiKey}&results=1`;
+
+    const fields = [
+        { name: 'field1', link: 'https://thingspeak.com/channels/2409417/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field2', link: 'https://thingspeak.com/channels/2409417/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field3', link: 'https://thingspeak.com/channels/2409417/charts/3?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field4', link: 'https://thingspeak.com/channels/2409417/charts/4?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field5', link: 'https://thingspeak.com/channels/2409417/charts/5?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field6', link: 'https://thingspeak.com/channels/2409417/charts/6?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field7', link: 'https://thingspeak.com/channels/2409417/charts/7?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' }
+    ];
+
+    function updateTable(data) {
+        const tableBody = document.querySelector('#dataTable tbody');
+        tableBody.innerHTML = '';
+
+        if (data.feeds && data.feeds.length > 0) {
+            const latestEntry = data.feeds[0];
+            const valuesRow = document.createElement('tr');
+
+            fields.forEach(field => {
+                const fieldName = field.name.toLowerCase();
+                const fieldValue = latestEntry[fieldName];
+                const valuesCell = document.createElement('td');
+                valuesCell.innerHTML = `${fieldValue !== undefined ? fieldValue : 'N/A'}`;
+                valuesRow.appendChild(valuesCell);
+            });
+
+            tableBody.appendChild(valuesRow);
+
+            valuesRow.querySelectorAll('td').forEach((td, index) => {
+                const field = fields[index].name.toLowerCase();
+                td.addEventListener('click', function () {
+                    updateGraph(field);
+                });
+            });
+
+        } else {
+            console.error('No data or empty feeds.');
+        }
+    }
+
+    function updateGraph(field) {
+        const graphFrame = document.getElementById('graphFrame');
+        const graphTitle = document.getElementById('graphTitle');
+        const selectedField = fields.find(f => f.name.toLowerCase() === field);
+
+        if (selectedField) {
+            const fieldNumber = fields.indexOf(selectedField) + 1;
+            const fieldName = getFieldDisplayName(fieldNumber);
+            graphFrame.src = selectedField.link;
+            graphTitle.innerText = `${fieldName} Graph`;
+
+            // Remove 'hidden' class and add 'fade-in' class to the graph elements
+            graphTitle.classList.remove('hidden');
+            graphFrame.classList.remove('hidden');
+
+            // Add fade-in class to trigger the fade-in effect
+            graphTitle.classList.add('fade-in');
+            graphFrame.classList.add('fade-in');
+        }
+    }
+
+    function getFieldDisplayName(fieldNumber) {
+        const fieldNames = {
+            1: 'Temperature',
+            2: 'Dia',
+            3: 'Sys',
+            4: 'SpO2',
+            5: 'HR',
+            6: 'Field6',
+            7: 'Field7'
+        };
+
+        return fieldNames[fieldNumber] || `Field${fieldNumber}`;
+    }
+
+    setInterval(function () {
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateTable(data);
+            })
+            .catch(error => console.error('Error fetching or updating data:', error.message));
+    }, 2000);
+});
+
+---------------------------------------------------------------------------------------------------------------
+
+3.styles.css
+/* styles.css */
+
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 800px;
+    margin: 20px auto; /* Adjust the margin-top value to center the container */
+    text-align: center;
+}
+
+h1.main-title {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+td {
+    background-color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+td:hover {
+    background-color: #e6e6e6;
+}
+
+#graphTitle,
+#graphFrame {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.fade-in {
+    opacity: 1 !important;
+}
+
+/* Hidden class for elements initially hidden */
+.hidden {
+    display: none;
+}
+
+===============================================================================================================
+
+=================================================== LATEST BACKUP =============================================
+
+1.html:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThingSpeak Data Display</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">GoldAid Safety System</h1>
+
+        <!-- Display fields in a table -->
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Temperature</th>
+                    <th>Dia</th>
+                    <th>Sys</th>
+                    <th>SpO2 (%)</th>
+                    <th>HR (bpm)</th>
+                    <th>Field 6</th>
+                    <th>Field 7</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr></tr>
+            </tbody>
+        </table>
+
+        <!-- Visible title for the ThingSpeak graph -->
+        <h2 id="graphTitle" class="hidden">Graph</h2>
+
+        <!-- Embed the ThingSpeak graph using an iframe -->
+        <iframe id="graphFrame" src="" width="100%" height="600px" frameborder="0" title="Graph" class="hidden"></iframe>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
+-----------------------------------------------------------------------------------------------------------
+
+2.css:
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 5vh 0; /* Adjust the top margin as needed */
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.main-title {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: #0a2683; /* Change the font color as needed */
+    font-family: 'Roboto', sans-serif; /* Replace 'YourChosenFont' with the desired font family */
+    text-shadow: 2px 2px 2px #ccc; /* Add text shadow or adjust as needed */
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #3f3d3d; /* Adjust the border color and thickness as needed */
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+}
+th {
+    background-color: #b2ece3;
+}
+
+td {
+    background-color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+td:hover {
+    background-color: #e6e6e6;
+}
+
+#graphTitle,
+#graphFrame {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.fade-in {
+    opacity: 1 !important;
+}
+
+/* Hidden class for elements initially hidden */
+.hidden {
+    display: none;
+}
+
+-------------------------------------------------------------------------------------------
+3.js:
+document.addEventListener("DOMContentLoaded", function () {
+    const channelID = '2409417';
+    const apiKey = '579VT12O9GUIU6IA';
+    const apiUrl = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${apiKey}&results=1`;
+
+    const fields = [
+        { name: 'field1', link: 'https://thingspeak.com/channels/2409417/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field2', link: 'https://thingspeak.com/channels/2409417/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field3', link: 'https://thingspeak.com/channels/2409417/charts/3?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field4', link: 'https://thingspeak.com/channels/2409417/charts/4?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field5', link: 'https://thingspeak.com/channels/2409417/charts/5?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field6', link: 'https://thingspeak.com/channels/2409417/charts/6?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' },
+        { name: 'field7', link: 'https://thingspeak.com/channels/2409417/charts/7?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15' }
+    ];
+
+    function updateTable(data) {
+        const tableBody = document.querySelector('#dataTable tbody');
+        tableBody.innerHTML = '';
+
+        if (data.feeds && data.feeds.length > 0) {
+            const latestEntry = data.feeds[0];
+            const valuesRow = document.createElement('tr');
+
+            fields.forEach(field => {
+                const fieldName = field.name.toLowerCase();
+                const fieldValue = latestEntry[fieldName];
+                const valuesCell = document.createElement('td');
+                valuesCell.innerHTML = `${fieldValue !== undefined ? fieldValue : 'N/A'}`;
+                valuesRow.appendChild(valuesCell);
+            });
+
+            tableBody.appendChild(valuesRow);
+
+            valuesRow.querySelectorAll('td').forEach((td, index) => {
+                const field = fields[index].name.toLowerCase();
+                td.addEventListener('click', function () {
+                    updateGraph(field);
+                });
+            });
+
+        } else {
+            console.error('No data or empty feeds.');
+        }
+    }
+
+    function updateGraph(field) {
+        const graphFrame = document.getElementById('graphFrame');
+        const graphTitle = document.getElementById('graphTitle');
+        const selectedField = fields.find(f => f.name.toLowerCase() === field);
+
+        if (selectedField) {
+            const fieldNumber = fields.indexOf(selectedField) + 1;
+            const fieldName = getFieldDisplayName(fieldNumber);
+            graphFrame.src = selectedField.link;
+            graphTitle.innerText = `${fieldName} Graph`;
+
+            // Remove 'hidden' class and add 'fade-in' class to the graph elements
+            graphTitle.classList.remove('hidden');
+            graphFrame.classList.remove('hidden');
+
+            // Add fade-in class to trigger the fade-in effect
+            graphTitle.classList.add('fade-in');
+            graphFrame.classList.add('fade-in');
+        }
+    }
+
+    function getFieldDisplayName(fieldNumber) {
+        const fieldNames = {
+            1: 'Temperature',
+            2: 'Dia',
+            3: 'Sys',
+            4: 'SpO2',
+            5: 'HR',
+            6: 'Field6',
+            7: 'Field7'
+        };
+
+        return fieldNames[fieldNumber] || `Field${fieldNumber}`;
+    }
+
+    setInterval(function () {
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateTable(data);
+            })
+            .catch(error => console.error('Error fetching or updating data:', error.message));
+    }, 2000);
+});
+
+================================================ LATEST =======================================
+1. html: 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThingSpeak Data Display</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        /* Your existing styles */
+        .graph-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #f1f1f1;
+            padding: 20px;
+            border: 1px solid #888;
+            z-index: 1;
+        }
+
+        #closeGraphBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: black;
+            cursor: pointer;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">GoldAid Safety System</h1>
+
+        <!-- Display fields in a table -->
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Temperature</th>
+                    <th>Dia</th>
+                    <th>Sys</th>
+                    <th>SpO2 (%)</th>
+                    <th>HR (bpm)</th>
+                    <th>Field 6</th>
+                    <th>Field 7</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr></tr>
+            </tbody>
+        </table>
+
+        <!-- Visible title for the ThingSpeak graph -->
+        <h2 id="graphTitle" class="hidden">Graph</h2>
+
+        <!-- Embed the ThingSpeak graph using an iframe -->
+        <iframe id="graphFrame" src="" width="100%" height="600px" frameborder="0" title="Graph" class="hidden"></iframe>
+    </div>
+
+    
+    <div class="graph-container">
+        <button id="closeGraphBtn" onclick="closeGraph()">Close</button>
+        <div id="graphTitle"></div>
+        <iframe id="graphFrame" class="fade-in hidden"></iframe>
+    </div>
+    
+
+    <!-- <div id="graphContainer" style="display: none;">
+        <div id="graphTitle"></div>
+        <iframe id="graphFrame" class="fade-in hidden"></iframe>
+        <button id="closeGraphBtn" onclick="closeGraph()">Close</button>
+    </div> -->
+    
+    
+      <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script src="https://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/aes.js"></script>
+      
+      <script>
+        function closeGraph() {
+            const graphContainer = document.querySelector('.graph-container');
+            graphContainer.style.display = 'none';
+        }
+    
+        function showGraph() {
+            const graphContainer = document.querySelector('.graph-container');
+            graphContainer.style.display = 'block';
+        }
+    
+        // Your existing JavaScript code
+        // ...
+    
+        $(document.body).on("click", ".Click-here", function () {
+            showGraph(); // Display the graph container
+    
+            // Fetch and display data in the graph
+            fetch(esw[this.parentElement.cells[0].innerHTML]["thing"])
+                .then((response) => response.json())
+                .then((data) => {
+                    // Code to update the graph with fetched data
+                    // Example code using Chart.js (ensure 'chart' is accessible in this scope)
+                    chart.data.labels = [];
+                    chart.data.datasets.forEach((dataset) => {
+                        dataset.data = [];
+                    });
+    
+                    for (var i = 0; i < prev[this.parentElement.cells[0].innerHTML][this.cellIndex - 1].length; i++) {
+                        chart.data.labels.push(i * 15);
+    
+                        chart.data.datasets.forEach((dataset) => {
+                            dataset.data.push(
+                                prev[this.parentElement.cells[0].innerHTML][this.cellIndex - 1][i]
+                            );
+                        });
+                    }
+    
+                    chart.update();
+    
+                    // Set up the interval to update the graph
+                    interv = setInterval(() => {
+                        fetch(esw[this.parentElement.cells[0].innerHTML]["thing"])
+                            .then((response) => response.json())
+                            .then((data) => {
+                                // Update the graph with the latest data
+                                // (similar to the initial graph update)
+                            });
+                    }, 15000);
+                });
+        });
+    </script>
+
+    <script src="main.js"></script>
+</body>
+</html>
+
+
