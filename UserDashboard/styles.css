@@ -1,138 +1,140 @@
 body {
-    font-family: 'Roboto', sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f0f2f5;
-    color: #333;
+  font-family: "Roboto", sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f2f5;
+  color: #333;
 }
 
 .container {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 2rem;
-    background-color: #ffffff;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
 }
 
 .main-title {
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
-    color: #0a2683;
-    text-align: center;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #0a2683;
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-top: 1.5rem;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 1.5rem;
 }
 
-th, td {
-    padding: 1rem;
-    text-align: center;
-    border: 1px solid #e0e0e0;
+th,
+td {
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid #e0e0e0;
 }
 
 th {
-    background-color: #b2ece3;
-    font-weight: 600;
-    text-transform: uppercase;
+  background-color: #b2ece3;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 td {
-    background-color: #ffffff;
-    transition: background-color 0.3s ease;
-    cursor: pointer;
+  background-color: #ffffff;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
 }
 
 td:hover {
-    background-color: #f5f5f5;
+  background-color: #f5f5f5;
 }
 
 .fall-detected {
-    background-color: #ff6666;
+  background-color: #ff6666;
 }
 
 .fall-detected td {
-    background-color: #ff6666;
+  background-color: #ff6666;
 }
 
 .fall-detected:hover td {
-    background-color: #ff4d4d;
+  background-color: #ff4d4d;
 }
 
 .graph-container {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    z-index: 1000;
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
 }
 
 .graph-content {
-    position: relative;
-    top: 50%;
-    transform: translateY(-50%);
-    margin: auto;
-    width: 90%;
-    max-width: 900px;
-    background-color: #ffffff;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: auto;
+  width: 90%;
+  max-width: 900px;
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .graph-title {
-    color: #0a2683;
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    text-align: center;
+  color: #0a2683;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
 }
 
 .graph-frame {
-    width: 100%;
-    height: 70vh;
-    border: none;
-    opacity: 0;
-    transition: opacity 0.5s ease;
+  width: 100%;
+  height: 70vh;
+  border: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
 }
 
 .close-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    color: #7f8c8d;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: color 0.3s ease;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #7f8c8d;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
 }
 
 .close-btn:hover {
-    color: #34495e;
+  color: #34495e;
 }
 
 .fade-in {
-    opacity: 1 !important;
+  opacity: 1 !important;
 }
 
 @media (max-width: 768px) {
-    .container {
-        padding: 1rem;
-    }
+  .container {
+    padding: 1rem;
+  }
 
-    th, td {
-        padding: 0.5rem;
-    }
+  th,
+  td {
+    padding: 0.5rem;
+  }
 
-    .main-title {
-        font-size: 2rem;
-    }
+  .main-title {
+    font-size: 2rem;
+  }
 }
