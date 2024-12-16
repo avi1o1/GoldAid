@@ -7,8 +7,8 @@
   Done till STEP 3
 */
 
-#include <Wire.h> //I2C library
-#include "SPI.h" //SPI library
+#include <Wire.h>     //I2C library
+#include "SPI.h"      //SPI library
 #include "max32664.h" //PulseOx
 #include <Adafruit_MPU6050.h>
 #include <LoRa.h>
@@ -17,9 +17,9 @@ TinyGPS gps;
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_WIDTH 128    // OLED display width, in pixels
+#define SCREEN_HEIGHT 64    // OLED display height, in pixels
+#define OLED_RESET -1       // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -37,14 +37,14 @@ volatile bool mpuInterrupt = false;
 
 String tx_string;
 
-const long frequency = 433E6;  // LoRa frequency
+const long frequency = 433E6; // LoRa frequency
 const int csPin = 5;          // LoRa radio chip select
-const int resetPin = 33;       // LoRa radio reset
-const int irqPin = 32;          // change for your board; must be a hardware interrupt pin
+const int resetPin = 33;      // LoRa radio reset
+const int irqPin = 32;        // change for your board; must be a hardware interrupt pin
 
 long old_millis;
-uint8_t acc_sampling_period = 1; //4ms, that means sampling freq = 250 Hz
-float fall_thresh = 1; // This is the value below which the µC assumes the body is going into free-fall
+uint8_t acc_sampling_period = 1; // 4ms, that means sampling freq = 250 Hz
+float fall_thresh = 1;           // This is the value below which the µC assumes the body is going into free-fall
 float tap_thresh = 6;
 boolean fall_flag = 0;
 boolean fall_certain = 0;
@@ -56,7 +56,7 @@ long fall_count = 0;
 long not_fall_count = 0;
 long total_count = 0;
 long start_millis, end_millis;
-float fall_min_time = 100; //500 ms, more info is given in the above comments
+float fall_min_time = 100; // 500 ms, more info is given in the above comments
 uint8_t fall_confidence = 70;
 uint8_t not_fall_confidence = 10;
 float confidence2;
@@ -68,7 +68,7 @@ static long fallCount = 0;
 static long totalCount = 0;
 static boolean fallFlag = false;
 static boolean fallCertain = false;
-const long vitalsDuration = 25000;  // 25 seconds for sending vitalsDuration
+const long vitalsDuration = 25000; // 25 seconds for sending vitalsDuration
 long old_millis_pulseox;
 int pulseox_sampling_period = 10000;
 boolean LoRa_send_flag = 0;
@@ -81,20 +81,23 @@ float temp;
 unsigned long pressStartTime = 0;
 
 long counter = 0;
-int  interval = 1000;
+int interval = 1000;
 
 max32664 MAX32664(RESET_PIN, MFIO_PIN, RAWDATA_BUFFLEN);
 
-void mfioInterruptHndlr() {
+void mfioInterruptHndlr()
+{
   Serial.println("i");
 }
 
-void enableInterruptPin() {
-  //pinMode(mfioPin, INPUT_PULLUP);
+void enableInterruptPin()
+{
+  // pinMode(mfioPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(MAX32664.mfioPin), mfioInterruptHndlr, FALLING);
 }
 
-void loadAlgomodeParameters() {
+void loadAlgomodeParameters()
+{
 
   algomodeInitialiser algoParameters;
   /*  Replace the predefined values with the calibration values taken with a reference spo2 device in a controlled environt.
@@ -121,22 +124,26 @@ String deviceID = "TX3"; // Change this ID for each Tx device
 bool sendingID = false;
 bool ack_flag;
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
-  while (!Serial);
+  while (!Serial)
+    ;
 
-  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
+  {
     Serial.println(F("SSD1306 allocation failed"));
-    for (;;);
+    for (;;)
+      ;
   }
 
   display.clearDisplay(); // Clear the display
-  display.setTextSize(2);  // Adjust the text size as needed
+  display.setTextSize(2); // Adjust the text size as needed
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(20, 20);
   display.print(F("GoldAid"));
   display.display();
-  display.setTextSize(1);  // Adjust the text size as needed
+  display.setTextSize(1); // Adjust the text size as needed
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(20, 40);
   display.print(F("WSD1"));
@@ -160,7 +167,7 @@ void setup() {
       delay(10);
     }
   }
-  mpu.setAccelerometerRange(MPU6050_RANGE_16_G); //accel.setRange(ADXL345_RANGE_16_G);
+  mpu.setAccelerometerRange(MPU6050_RANGE_16_G); // accel.setRange(ADXL345_RANGE_16_G);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 
   Serial.println("MPU 6050 initialised");
@@ -172,7 +179,8 @@ void setup() {
   if (MAX32664.hubBegin() != CMD_SUCCESS)
   {
     Serial.println("MAX32664 not initialised");
-    while (1);
+    while (1)
+      ;
   }
 
   display.clearDisplay();
@@ -181,31 +189,35 @@ void setup() {
   display.display();
 
   bool ret = MAX32664.startBPTcalibration();
-  while (!ret) {
+  while (!ret)
+  {
     delay(10000);
     Serial.println("failed calib, please retsart");
-    //ret = MAX32664.startBPTcalibration();
+    // ret = MAX32664.startBPTcalibration();
   }
 
   delay(1000);
 
   Serial.println("start in estimation mode");
   ret = MAX32664.configAlgoInEstimationMode();
-  while (!ret) {
+  while (!ret)
+  {
 
     Serial.println("failed est mode");
     ret = MAX32664.configAlgoInEstimationMode();
     delay(10000);
   }
 
-  //MAX32664.enableInterruptPin();
+  // MAX32664.enableInterruptPin();
   Serial.println("Getting the device ready..");
   delay(1000);
 
   LoRa.setPins(csPin, resetPin, irqPin);
-  if (!LoRa.begin(frequency)) {
+  if (!LoRa.begin(frequency))
+  {
     Serial.println("Starting LoRa failed!");
-    while (1);
+    while (1)
+      ;
   }
 
   LoRa.setSyncWord(0xA5);
@@ -215,15 +227,17 @@ void setup() {
   LoRa.setCodingRate4(8);
 
   Wire.beginTransmission(0x48);
-  if (Wire.endTransmission() == 0) Serial.println("TMP117 Found");
-  else Serial.println("TMP117 Not Found");
+  if (Wire.endTransmission() == 0)
+    Serial.println("TMP117 Found");
+  else
+    Serial.println("TMP117 Not Found");
 
   Wire.beginTransmission(0x48);
   Wire.write(0x01);
   Wire.endTransmission(false);
   Wire.requestFrom(0x48, 2, true);
   uint8_t highbyte = Wire.read();
-  uint8_t lowbyte  = Wire.read();
+  uint8_t lowbyte = Wire.read();
   highbyte |= 0b00001100; // for setting one shot mode
 
   Wire.beginTransmission(0x48);
@@ -234,14 +248,16 @@ void setup() {
 
   delay(100);
   LoRa.beginPacket();
-  //LoRa.print("Hello from WSD" + String(USER_ID));
+  // LoRa.print("Hello from WSD" + String(USER_ID));
   LoRa.endPacket();
 }
 
-void loop() {
+void loop()
+{
   int packetSize = LoRa.parsePacket();
 
-  if (fallDetection() || buttonPressed()) {
+  if (fallDetection() || buttonPressed())
+  {
     Serial.println("****Alert generated****");
     display.clearDisplay();
     display.setCursor(0, 22);
@@ -250,10 +266,13 @@ void loop() {
     display.print("Alert Sent");
     display.display();
   }
-  else {
-    if (packetSize) {
+  else
+  {
+    if (packetSize)
+    {
       String message = "";
-      while (LoRa.available()) {
+      while (LoRa.available())
+      {
         message += (char)LoRa.read();
       }
       Serial.print("###Received message: ");
@@ -265,16 +284,21 @@ void loop() {
       display.println(message);
       display.display();
 
-      if (message == "Send IDs") {
+      if (message == "Send IDs")
+      {
         ack_flag = false;
         Serial.println("** Inside Send IDs condition **");
         sendingID = true;
         sendID();
-      } else {
-        if (message.startsWith("ACK ")) {
+      }
+      else
+      {
+        if (message.startsWith("ACK "))
+        {
           Serial.println("** Inside ACK received condition **");
           String ackID = message.substring(4); // ACK TX3
-          if (ackID == deviceID.substring(2)) {
+          if (ackID == deviceID.substring(2))
+          {
             Serial.println("** Inside ACK matched condition **");
             Serial.println(ackID);
             sendingID = false;
@@ -286,17 +310,20 @@ void loop() {
             display.display();
             ack_flag = true;
           }
-          else if (!ack_flag) {
+          else if (!ack_flag)
+          {
             Serial.println(sendingID);
             sendingID = true;
             sendID();
             Serial.println("else- when ACK is not received.");
           }
         }
-        else if (message.startsWith("Beacon ")) {
+        else if (message.startsWith("Beacon "))
+        {
           // New code for handling Beacon
           String beaconID = message.substring(7); // Extract the ID from the beacon message
-          if (beaconID == deviceID) {
+          if (beaconID == deviceID)
+          {
             sendBeaconAck(); // Send acknowledgment for the beacon
           }
         }
@@ -305,8 +332,10 @@ void loop() {
   }
 }
 
-void sendID() {
-  if (sendingID) {
+void sendID()
+{
+  if (sendingID)
+  {
     Serial.print("Sending ID: ");
     Serial.println(deviceID);
     LoRa.beginPacket();
@@ -324,8 +353,10 @@ void sendID() {
   }
 }
 
-void sendBeaconAck() {
-  if ((millis() - old_millis_LoRa) > LoRa_transmit_period) {
+void sendBeaconAck()
+{
+  if ((millis() - old_millis_LoRa) > LoRa_transmit_period)
+  {
     old_millis_LoRa = millis();
 
     // Construct and send the data packet
@@ -342,30 +373,32 @@ void sendBeaconAck() {
     LoRa.endPacket();
   }
 
-  if ((millis() - old_millis_pulseox) > pulseox_sampling_period) {
+  if ((millis() - old_millis_pulseox) > pulseox_sampling_period)
+  {
     old_millis_pulseox = millis();
 
     Wire.beginTransmission(0x48);
     Wire.write(0x01);
     Wire.endTransmission(false);
     Wire.requestFrom(0x48, 2, true);
-    responseFromI2C = ( Wire.read() << 8 | Wire.read());
+    responseFromI2C = (Wire.read() << 8 | Wire.read());
     dataReadyFlag = (responseFromI2C >> 13) & 0x0001;
 
-    if (dataReadyFlag) {
+    if (dataReadyFlag)
+    {
       Wire.beginTransmission(0x48);
       Wire.write(0x00);
       Wire.endTransmission(false);
       Wire.requestFrom(0x48, 2, true);
-      responseFromI2C = ( Wire.read() << 8 | Wire.read());
-      temp = responseFromI2C * 0.0078125; //Resolution = 0.0078125
+      responseFromI2C = (Wire.read() << 8 | Wire.read());
+      temp = responseFromI2C * 0.0078125; // Resolution = 0.0078125
 
       Wire.beginTransmission(0x48);
       Wire.write(0x01);
       Wire.endTransmission(false);
       Wire.requestFrom(0x48, 2, true);
       uint8_t highbyte = Wire.read();
-      uint8_t lowbyte  = Wire.read();
+      uint8_t lowbyte = Wire.read();
       highbyte |= 0b00001100; // for setting one shot mode
 
       Wire.beginTransmission(0x48);
@@ -377,7 +410,8 @@ void sendBeaconAck() {
 
     uint8_t num_samples = MAX32664.readSamples();
 
-    if (num_samples) {
+    if (num_samples)
+    {
 
       String hr = String(MAX32664.max32664Output.hr);
       String spo2 = String(MAX32664.max32664Output.spo2);
@@ -388,7 +422,8 @@ void sendBeaconAck() {
       char slat[15], slon[15];
       unsigned long age;
 
-      while (Serial2.available())  gps.encode(Serial2.read());
+      while (Serial2.available())
+        gps.encode(Serial2.read());
 
       gps.f_get_position(&flat, &flon, &age);
 
@@ -446,7 +481,8 @@ void sendBeaconAck() {
   }
 }
 
-bool fallDetection() {
+bool fallDetection()
+{
   sensors_event_t event, g, temp;
   mpu.getEvent(&event, &g, &temp);
 
@@ -456,8 +492,10 @@ bool fallDetection() {
 
   float mag = sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
 
-  if (mag < fall_thresh) {
-    if (fall_flag == 0) {
+  if (mag < fall_thresh)
+  {
+    if (fall_flag == 0)
+    {
       start_millis = millis();
       fall_count = 0;
       total_count = 0;
@@ -466,12 +504,16 @@ bool fallDetection() {
     fall_flag = 1;
     fall_count++;
 
-    if ((millis() - start_millis) > fall_min_time) {
+    if ((millis() - start_millis) > fall_min_time)
+    {
       float confidence = static_cast<float>(fall_count) / static_cast<float>(total_count) * 100.0;
 
-      if (confidence > fall_confidence) {
+      if (confidence > fall_confidence)
+      {
         fall_certain = true;
-      } else {
+      }
+      else
+      {
         fall_flag = 0;
         fall_count = 0;
         total_count = 0;
@@ -482,17 +524,19 @@ bool fallDetection() {
 
   confidence2 = static_cast<float>(fall_count) / static_cast<float>(total_count) * 100.0;
 
-  if ((confidence2 <= not_fall_confidence) && fall_flag) {
+  if ((confidence2 <= not_fall_confidence) && fall_flag)
+  {
     fall_flag = 0;
     Serial.println("********NOT FALL********");
   }
 
-  if (fall_certain && (mag > 2)) { //XXXXXXXXX previously 6 {
+  if (fall_certain && (mag > 2))
+  { // XXXXXXXXX previously 6 {
     fall_certain = false;
     Serial.println();
     Serial.println("*******************FALL DETECTED*******************");
     Serial.println();
-    //digitalWrite(STATUS, HIGH);
+    // digitalWrite(STATUS, HIGH);
 
     // Changed Alert message from "Fall Detected from <deviceID>" to "ALERT:<deviceID>"
     String alert = "ALERT:";
@@ -526,7 +570,6 @@ bool fallDetection() {
     flag_thinkspeak = 1;
     old_millis_LoRa = millis();
 
-
     fall_flag = 0;
     return true;
   }
@@ -534,12 +577,18 @@ bool fallDetection() {
   return false;
 }
 
-bool buttonPressed() {
-  if (digitalRead(buttonPin1) == LOW && digitalRead(buttonPin2) == LOW) { // Check if both buttons are pressed
-    if (pressStartTime == 0) { // If it's the first time both buttons are pressed
+bool buttonPressed()
+{
+  if (digitalRead(buttonPin1) == LOW && digitalRead(buttonPin2) == LOW)
+  { // Check if both buttons are pressed
+    if (pressStartTime == 0)
+    {                            // If it's the first time both buttons are pressed
       pressStartTime = millis(); // Record the start time
-    } else {
-      if (millis() - pressStartTime >= 2000) { // If both buttons have been pressed for at least 2 seconds
+    }
+    else
+    {
+      if (millis() - pressStartTime >= 2000)
+      {                     // If both buttons have been pressed for at least 2 seconds
         pressStartTime = 0; // Reset the press start time
         LoRa.beginPacket();
         LoRa.print("SOS Alert");
@@ -557,7 +606,9 @@ bool buttonPressed() {
         return true; // Return true to indicate both buttons were pressed for 2 seconds
       }
     }
-  } else {
+  }
+  else
+  {
     pressStartTime = 0; // Reset the press start time if buttons are not pressed together
   }
   return false; // Return false if both buttons are not pressed for 2 seconds

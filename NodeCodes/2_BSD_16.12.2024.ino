@@ -11,17 +11,17 @@
 #include <Adafruit_SSD1306.h>
 
 // LoRa radio pins
-const int csPin = 5;        // LoRa radio chip select
-const int resetPin = 33;    // LoRa radio reset
-const int irqPin = 32;      // Change for your board; must be a hardware interrupt pin
+const int csPin = 5;          // LoRa radio chip select
+const int resetPin = 33;      // LoRa radio reset
+const int irqPin = 32;        // Change for your board; must be a hardware interrupt pin
 const long frequency = 433E6; // LoRa frequency
 
 // OLED display pins
-#define OLED_SDA    21
-#define OLED_SCL    22
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define OLED_SDA 21
+#define OLED_SCL 22
+#define SCREEN_WIDTH 128    // OLED display width, in pixels
+#define SCREEN_HEIGHT 64    // OLED display height, in pixels
+#define OLED_RESET -1       // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -31,7 +31,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define RECEIVE_DURATION 30000  // 1 minute
 
 // Storage for IDs and RSSIs
-struct TxInfo {
+struct TxInfo
+{
   String id;
   int rssi;
 } txInfo;
@@ -42,15 +43,19 @@ int txCount = 0;
 unsigned long startTime;
 bool receiving = false;
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
-  while (!Serial);
+  while (!Serial)
+    ;
 
   LoRa.setPins(csPin, resetPin, irqPin);
 
-  if (!LoRa.begin(frequency)) {
+  if (!LoRa.begin(frequency))
+  {
     Serial.println("Starting LoRa failed!");
-    while (1);
+    while (1)
+      ;
   }
   LoRa.setSyncWord(0xA5);
   LoRa.setTxPower(10);
@@ -58,10 +63,11 @@ void setup() {
   LoRa.setSignalBandwidth(62.5E3);
   LoRa.setCodingRate4(8);
 
-
-  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
+  {
     Serial.println(F("SSD1306 allocation failed"));
-    for (;;);
+    for (;;)
+      ;
   }
 
   display.clearDisplay();
@@ -72,18 +78,21 @@ void setup() {
   display.display();
 }
 
-void loop() {
+void loop()
+{
   startTime = millis();
   unsigned long currentMillis = startTime;
-  if (!receiving && currentMillis - startTime < 5000) {
+  if (!receiving && currentMillis - startTime < 5000)
+  {
     Serial.println("## Inside broadcast");
     broadcastIDRequest();
     currentMillis = millis();
     receiving = true;
   }
 
-  while (receiving && currentMillis - startTime < 30000) {
-    //Serial.println("## Inside receiving");
+  while (receiving && currentMillis - startTime < 30000)
+  {
+    // Serial.println("## Inside receiving");
     receiveID();
     currentMillis = millis();
     sortTxDevicesByRSSI();
@@ -97,16 +106,20 @@ void loop() {
   receiving = false;
 }
 
-void checkForAlerts() {
+void checkForAlerts()
+{
   int packetSize = LoRa.parsePacket();
-  if (packetSize) {
+  if (packetSize)
+  {
     String message = "";
-    while (LoRa.available()) {
+    while (LoRa.available())
+    {
       message += (char)LoRa.read();
     }
 
     // If the message contains "ALERT", display it
-    if (message.indexOf("ALERT") != -1) {
+    if (message.indexOf("ALERT") != -1)
+    {
 
       // Extracting deviceID from "ALERT:<deviceID>"
       char string[12];
@@ -131,7 +144,9 @@ void checkForAlerts() {
     }
   }
 }
-void broadcastIDRequest() {
+
+void broadcastIDRequest()
+{
   Serial.println("Broadcasting ID request...");
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -143,11 +158,14 @@ void broadcastIDRequest() {
   LoRa.endPacket();
 }
 
-void receiveID() {
+void receiveID()
+{
   int packetSize = LoRa.parsePacket();
-  if (packetSize) {
+  if (packetSize)
+  {
     String id = "";
-    while (LoRa.available()) {
+    while (LoRa.available())
+    {
       id += (char)LoRa.read();
     }
     int rssi = LoRa.packetRssi();
@@ -172,7 +190,8 @@ void receiveID() {
   }
 }
 
-void sendAck(String id) {
+void sendAck(String id)
+{
   Serial.print("Sending ACK to ");
   Serial.println(id);
 
@@ -187,18 +206,24 @@ void sendAck(String id) {
   LoRa.endPacket();
 }
 
-void storeTxDevice(String id, int rssi) {
-  if (txCount < 10) {
+void storeTxDevice(String id, int rssi)
+{
+  if (txCount < 10)
+  {
     txDevices[txCount].id = id;
     txDevices[txCount].rssi = rssi;
     txCount++;
   }
 }
 
-void sortTxDevicesByRSSI() {
-  for (int i = 0; i < txCount - 1; i++) {
-    for (int j = i + 1; j < txCount; j++) {
-      if (txDevices[i].rssi > txDevices[j].rssi) {
+void sortTxDevicesByRSSI()
+{
+  for (int i = 0; i < txCount - 1; i++)
+  {
+    for (int j = i + 1; j < txCount; j++)
+    {
+      if (txDevices[i].rssi > txDevices[j].rssi)
+      {
         TxInfo temp = txDevices[i];
         txDevices[i] = txDevices[j];
         txDevices[j] = temp;
@@ -207,13 +232,15 @@ void sortTxDevicesByRSSI() {
   }
 }
 
-void displayTxDevices() {
+void displayTxDevices()
+{
   Serial.println("Sorted TX Devices by RSSI:");
   display.clearDisplay();
   display.setCursor(0, 0);
   display.println("Sorted TX Devices:");
 
-  for (int i = 0; i < txCount; i++) {
+  for (int i = 0; i < txCount; i++)
+  {
     Serial.print("ID: ");
     Serial.print(txDevices[i].id);
     Serial.print(" RSSI: ");
@@ -227,23 +254,27 @@ void displayTxDevices() {
   display.display();
 }
 
-
-void displayLatestArray() {
+void displayLatestArray()
+{
   Serial.println("Final Array of Latest TX Devices:");
   display.clearDisplay();
   display.setCursor(0, 0);
   display.println("Final TX Devices:");
 
   // Find the latest unique IDs with their smallest RSSI
-  for (int i = 0; i < txCount; i++) {
+  for (int i = 0; i < txCount; i++)
+  {
     bool isUnique = true;
-    for (int j = 0; j < i; j++) {
-      if (txDevices[i].id == txDevices[j].id) {
+    for (int j = 0; j < i; j++)
+    {
+      if (txDevices[i].id == txDevices[j].id)
+      {
         isUnique = false;
         break;
       }
     }
-    if (isUnique) {
+    if (isUnique)
+    {
       Serial.print("ID: ");
       Serial.print(txDevices[i].id);
       Serial.print(" RSSI: ");
@@ -258,14 +289,17 @@ void displayLatestArray() {
   display.display();
 }
 
-void sendBeaconsToTxDevices() {
-  for (int i = 0; i < txCount; i++) {
+void sendBeaconsToTxDevices()
+{
+  for (int i = 0; i < txCount; i++)
+  {
     sendBeacon(txDevices[i].id);
     waitForBeaconAck(txDevices[i].id);
   }
 }
 
-void sendBeacon(String id) {
+void sendBeacon(String id)
+{
   Serial.print("Sending Beacon to: ");
   Serial.println(id);
 
@@ -313,44 +347,47 @@ void sendBeacon(String id) {
   display.display();
   }*/
 
-void waitForBeaconAck(String id) {
+void waitForBeaconAck(String id)
+{
   unsigned long startWait = millis();
-  while (millis() - startWait < 5000) { // Wait for up to 5 seconds for the acknowledgment
+  while (millis() - startWait < 5000)
+  { // Wait for up to 5 seconds for the acknowledgment
     int packetSize = LoRa.parsePacket();
-    if (packetSize) {
+    if (packetSize)
+    {
       String message = "";
-      while (LoRa.available()) {
+      while (LoRa.available())
+      {
         message += (char)LoRa.read();
       }
 
       // Check if the message is an acknowledgment with the expected format
-      //if (message.startsWith("Beacon received " + id)) {
-        //String tx_string = message.substring(("Beacon received " + id).length() + 1); // Extract the TX string
+      // if (message.startsWith("Beacon received " + id)) {
+      // String tx_string = message.substring(("Beacon received " + id).length() + 1); // Extract the TX string
 
-        
-        Serial.println(message);
+      Serial.println(message);
 
-        display.clearDisplay();
-        display.setCursor(0, 0);
-        display.println(message);
-        display.display();
-        return;
-  
-        /*
-        Serial.print("Beacon received by: ");
-        Serial.println(id);
-        Serial.print("TX String: ");
-        Serial.println(tx_string);
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.println(message);
+      display.display();
+      return;
 
-        display.clearDisplay();
-        display.setCursor(0, 0);
-        display.print("Beacon received by: ");
-        display.println(id);
-        display.print("TX String: ");
-        display.println(tx_string);
-        display.display();
-        return;
-        */
+      /*
+      Serial.print("Beacon received by: ");
+      Serial.println(id);
+      Serial.print("TX String: ");
+      Serial.println(tx_string);
+
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.print("Beacon received by: ");
+      display.println(id);
+      display.print("TX String: ");
+      display.println(tx_string);
+      display.display();
+      return;
+      */
     }
   }
 
