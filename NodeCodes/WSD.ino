@@ -296,7 +296,7 @@ void loop()
         if (message.startsWith("ACK "))
         {
           Serial.println("** Inside ACK received condition **");
-          String ackID = message.substring(4); // ACK TX1
+          String ackID = message.substring(4); // ACK TX3
           if (ackID == deviceID.substring(2))
           {
             Serial.println("** Inside ACK matched condition **");
@@ -538,7 +538,9 @@ bool fallDetection()
     Serial.println();
     // digitalWrite(STATUS, HIGH);
 
-    String alert = "Fall Detected from TX1";
+    // Changed Alert message from "Fall Detected from <deviceID>" to "ALERT:<deviceID>"
+    String alert = "ALERT:";
+    alert += deviceID;
     LoRa.beginPacket();
     LoRa.print(alert);
     LoRa.endPacket();
@@ -550,7 +552,10 @@ bool fallDetection()
     display.print("Alert Sent");
     display.display();
 
-    Serial.println("Message sent from TX1: Fall detected");
+    // Changed print message to not device specific
+    Serial.print("Message sent from ");
+    Serial.print(deviceID);
+    Serial.println(": ALERT");
 
     long height = 0.5 * 9.8 * pow((millis() - start_millis), 2);
     float height_actual = static_cast<float>(height) / 1000000;

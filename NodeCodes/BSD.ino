@@ -120,9 +120,16 @@ void checkForAlerts()
     // If the message contains "ALERT", display it
     if (message.indexOf("ALERT") != -1)
     {
-      Serial.println("*** ALERT Detected: " + message + " ***");
+
+      // Extracting deviceID from "ALERT:<deviceID>"
+      char string[12];
+      message.toCharArray(string, sizeof(string));
+      char *deviceID = strtok(string, ":");
+      deviceID = strtok(NULL, ":");
+
+      Serial.println("*** " + message + " ***");
       Serial.print("From ID: ");
-      Serial.println(txInfo.id);
+      Serial.println(deviceID);
 
       display.clearDisplay();
       display.setCursor(0, 0);
@@ -132,7 +139,7 @@ void checkForAlerts()
       display.println();
       display.println(message);
       display.print("From ID: ");
-      display.println(txInfo.id);
+      display.println(deviceID);
       display.display();
     }
   }
@@ -355,24 +362,32 @@ void waitForBeaconAck(String id)
       }
 
       // Check if the message is an acknowledgment with the expected format
-      if (message.startsWith("Beacon received " + id))
-      {
-        String tx_string = message.substring(("Beacon received " + id).length() + 1); // Extract the TX string
+      // if (message.startsWith("Beacon received " + id)) {
+      // String tx_string = message.substring(("Beacon received " + id).length() + 1); // Extract the TX string
 
-        Serial.print("Beacon received by: ");
-        Serial.println(id);
-        Serial.print("TX String: ");
-        Serial.println(tx_string);
+      Serial.println(message);
 
-        display.clearDisplay();
-        display.setCursor(0, 0);
-        display.print("Beacon received by: ");
-        display.println(id);
-        display.print("TX String: ");
-        display.println(tx_string);
-        display.display();
-        return;
-      }
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.println(message);
+      display.display();
+      return;
+
+      /*
+      Serial.print("Beacon received by: ");
+      Serial.println(id);
+      Serial.print("TX String: ");
+      Serial.println(tx_string);
+
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.print("Beacon received by: ");
+      display.println(id);
+      display.print("TX String: ");
+      display.println(tx_string);
+      display.display();
+      return;
+      */
     }
   }
 
