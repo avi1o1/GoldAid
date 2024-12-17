@@ -1,127 +1,127 @@
 document.addEventListener("DOMContentLoaded", function () {
   const CONFIG = {
-    channelIDs: ["2409417"], // Add all your channel IDs here
-    apiKey: "579VT12O9GUIU6IA",
+    vitalsChannelID: "2787553",
+    vitalsReadAPI: "B9VN706EGIISH9L5",
+    alertsChannelID: "2787587",
+    alertsReadAPI: "1FM4WTY1P5LEXSIV",
     updateInterval: 2000,
   };
 
-  const FIELDS = [
-    { name: "field1", displayName: "Temperature", link: getChartLink(1) },
-    { name: "field2", displayName: "Dia", link: getChartLink(2) },
-    { name: "field3", displayName: "Sys", link: getChartLink(3) },
-    { name: "field4", displayName: "SpO2", link: getChartLink(4) },
-    { name: "field5", displayName: "HR", link: getChartLink(5) },
-    { name: "field6", displayName: "Field 6", link: getChartLink(6) },
-    { name: "field7", displayName: "Field 7", link: getChartLink(7) },
-    { name: "field8", displayName: "Fall Detected", link: getChartLink(8) },
-  ];
-
-  function getChartLink(channelID, fieldNumber) {
-    return `https://thingspeak.com/channels/${channelID}/charts/${fieldNumber}?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15`;
-  }
-
-  function updateTable(data) {
+  function updateTable(nodeData) {
     const tableBody = document.querySelector("#dataTable tbody");
     tableBody.innerHTML = "";
+    
+    if (nodeData.feeds && nodeData.feeds.length > 0) {
+      const latestEntry = nodeData.feeds[0];
+      
+      // loop to print all values from field1 to field8
+      for (let i = 1; i <= 8; i++) {
+        data = latestEntry[`field${i}`] || "NULL";
+        if (data === "NULL") {
+          continue;
+        }
+        
+        // Extract details in format "<bsd_id>-<wsd_id>:<temp>,<spo2>,<hr>,<lat>,<lon>:...;"
+        lastDataPoint = data.split(";")[0];
+        const [ids, vitals] = lastDataPoint.split(":");
+        const [bsd_id, wsd_id] = ids.split("-");
+        const [temp, spo2, hr, lat, lon] = vitals.split(",");
+        const cellValues = [wsd_id, bsd_id, temp, spo2, hr, `${lat}, ${lon}`, latestEntry.updated_at];
+        // console.log(cellValues);
 
-    data.forEach((nodeData, index) => {
-      if (nodeData.feeds && nodeData.feeds.length > 0) {
-        const latestEntry = nodeData.feeds[0];
+        // Add values to table
         const valuesRow = document.createElement("tr");
-
-        // Add Node ID
         const nodeCell = document.createElement("td");
         nodeCell.textContent = `${nodeData.channel.id}`;
         valuesRow.appendChild(nodeCell);
 
-        FIELDS.forEach((field) => {
-          const fieldValue = latestEntry[field.name] || "-";
+        cellValues.forEach((value, index) => {
           const cell = document.createElement("td");
-          cell.textContent = fieldValue;
-          if (field.name !== "field8") {
-            cell.addEventListener("click", () =>
-              updateGraph(field.name, nodeData.channel.id)
-            );
-          }
+          cell.textContent = value;
           valuesRow.appendChild(cell);
         });
-
-        // Check if fall is detected
-        if (
-          latestEntry.field8 &&
-          (latestEntry.field8 === "1" ||
-            latestEntry.field8.toLowerCase() === "true")
-        ) {
-          valuesRow.classList.add("fall-detected");
-        }
-
+        
         tableBody.appendChild(valuesRow);
       }
-    });
+    }
 
     if (tableBody.children.length === 0) {
-      console.error("No data or empty feeds for all nodes.");
+      console.log("No data or empty feeds for all nodes.");
+      const errorRow = document.createElement("tr");
+      const errorCell = document.createElement("td");
+      errorCell.setAttribute("colspan", 8);
+      errorCell.textContent = "No data or empty feeds for all nodes.";
+      errorCell.classList.add("error-message");
+      errorRow.appendChild(errorCell);
+      tableBody.appendChild(errorRow);  
     }
   }
 
-  function updateGraph(fieldName, channelID) {
-    const graphContainer = document.getElementById("graphContainer");
-    const graphFrame = document.getElementById("graphFrame");
-    const graphTitle = document.getElementById("graphTitle");
-    const selectedField = FIELDS.find((f) => f.name === fieldName);
-
-    if (selectedField) {
-      graphFrame.src = selectedField.link(
-        channelID,
-        FIELDS.indexOf(selectedField) + 1
-      );
-      graphTitle.textContent = `${selectedField.displayName} Graph - Node ${
-        CONFIG.channelIDs.indexOf(channelID) + 1
-      }`;
-      graphContainer.style.display = "block";
-
-      // Trigger reflow to ensure the fade-in animation works
-      void graphFrame.offsetWidth;
-
-      graphFrame.classList.add("fade-in");
-    }
-  }
-
-  function closeGraph() {
-    const graphContainer = document.getElementById("graphContainer");
-    const graphFrame = document.getElementById("graphFrame");
-
-    graphFrame.classList.remove("fade-in");
-    graphContainer.style.display = "none";
-  }
-
-  function fetchData() {
-    Promise.all(
-      CONFIG.channelIDs.map((channelID) =>
-        fetch(
-          `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${CONFIG.apiKey}&results=1`
-        ).then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
+  function updateFall(nodeData) {
+    if (nodeData.feeds && nodeData.feeds.length > 0) {
+      const latestEntry = nodeData.feeds[0];
+      
+      // loop to print all values from field1 to field8
+      for (let i = 1; i <= 8; i++) {
+        data = latestEntry[`field${i}`] || "NULL";
+        if (data === "NULL") {
+          continue;
+        }
+        
+        // Extract details in format "bsd_id-wsd_id;..."
+        const dataPoints = data.split(";");
+        const tableBody = document.querySelector("#dataTable tbody");
+        const rows = tableBody.children;
+        
+        dataPoints.forEach((dataPoint) => {
+          const [ids, vitals] = dataPoint.split(":");
+          const [bsd_id, wsd_id] = ids.split("-");
+        
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.children[1].textContent === wsd_id) {
+              row.classList.add("fall-detected");
+              break;
+            }
           }
-          return response.json();
-        })
-      )
+        });
+      }
+    }
+  }
+
+  function updateData() {
+    // Fetching Vital data from ThingSpeak
+    fetch(
+      `https://api.thingspeak.com/channels/${CONFIG.vitalsChannelID}/feeds.json?api_key=${CONFIG.vitalsReadAPI}&results=1`
     )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
       .then(updateTable)
+      .catch((error) =>
+        console.error("Error fetching or updating data:", error.message)
+      );
+
+    // Fetching Alert data from ThingSpeak
+    fetch(
+      `https://api.thingspeak.com/channels/${CONFIG.alertsChannelID}/feeds.json?api_key=${CONFIG.alertsReadAPI}&results=1`
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then(updateFall)
       .catch((error) =>
         console.error("Error fetching or updating data:", error.message)
       );
   }
 
-  // Initial data fetch
-  fetchData();
-
-  // Set up interval for data updates
-  setInterval(fetchData, CONFIG.updateInterval);
-
-  // Set up event listener for closing the graph
-  document
-    .getElementById("closeGraphBtn")
-    .addEventListener("click", closeGraph);
+  // Initial data fetch and interval update
+  updateData();
+  setInterval(updateData, CONFIG.updateInterval);
 });

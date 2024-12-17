@@ -30,6 +30,12 @@ table {
   margin-top: 1.5rem;
 }
 
+.error-message {
+  color: red;
+  font-weight: bold;
+  background-color: #eee;
+}
+
 th,
 td {
   padding: 1rem;
