@@ -22,26 +22,32 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         
         // Extract details in format "<bsd_id>-<wsd_id>:<temp>,<spo2>,<hr>,<lat>,<lon>:...;"
-        lastDataPoint = data.split(";")[0];
-        const [ids, vitals] = lastDataPoint.split(":");
-        const [bsd_id, wsd_id] = ids.split("-");
-        const [temp, spo2, hr, lat, lon] = vitals.split(",");
-        const cellValues = [wsd_id, bsd_id, temp, spo2, hr, `${lat}, ${lon}`, latestEntry.updated_at];
-        // console.log(cellValues);
+        const [bsd_id, data] = data.split("-");
+        const dataPoints = data.split(";");
 
-        // Add values to table
-        const valuesRow = document.createElement("tr");
-        const nodeCell = document.createElement("td");
-        nodeCell.textContent = `${nodeData.channel.id}`;
-        valuesRow.appendChild(nodeCell);
+        // iterate over each data point and extract values
+        for (let i = dataPoints.length-1; i >= 0; i--) {
+          const dataPoint = dataPoints[i];
 
-        cellValues.forEach((value, index) => {
-          const cell = document.createElement("td");
-          cell.textContent = value;
-          valuesRow.appendChild(cell);
-        });
-        
-        tableBody.appendChild(valuesRow);
+          const [wsd_id, vitals] = dataPoint.split(":");
+          const [temp, spo2, hr, lat, lon] = vitals.split(",");
+          const cellValues = [wsd_id, bsd_id, temp, spo2, hr, `${lat}, ${lon}`, latestEntry.updated_at];
+          // console.log(cellValues);
+
+          // Add values to table
+          const valuesRow = document.createElement("tr");
+          const nodeCell = document.createElement("td");
+          nodeCell.textContent = `${nodeData.channel.id}`;
+          valuesRow.appendChild(nodeCell);
+  
+          cellValues.forEach((value, index) => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            valuesRow.appendChild(cell);
+          });
+          
+          tableBody.appendChild(valuesRow);
+        }
       }
     }
 
