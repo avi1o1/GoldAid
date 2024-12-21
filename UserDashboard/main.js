@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
           continue;
         }
   
-        // Extract details in format "<bsd_id>-<wsd_id>:<temp>,<spo2>,<hr>,<lat>,<lon>:...;"
+        // Extract details in format "<bsd_id>-<wsd_id>:<temp>,<spo2>,<hr>,<lat>,<lon>;<wsd_id>...;"
         const [bsd_id, data] = content.split("-");
         const dataPoints = data.split(";");
   
@@ -75,22 +75,24 @@ document.addEventListener("DOMContentLoaded", function () {
           continue;
         }
         
-        // Extract details in format "bsd_id-wsd_id;..."
+        // Extract details in format "<bsd_id>-<wsd_id>;..."
         const dataPoints = data.split(";");
         const tableBody = document.querySelector("#dataTable tbody");
         const rows = tableBody.children;
         
         dataPoints.forEach((dataPoint) => {
-          const [ids, vitals] = dataPoint.split(":");
-          const [bsd_id, wsd_id] = ids.split("-");
-        
-          for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            if (row.children[1].textContent === wsd_id) {
-              row.classList.add("fall-detected");
-              break;
+          const [bsd_id, wsd_ids_str] = dataPoint.split("-");
+          const wsd_ids = wsd_ids_str.split(";");
+          
+          wsd_ids.forEach((wsd_id) => {
+            for (let i = 0; i < rows.length; i++) {
+              const row = rows[i];
+              if (row.children[1].textContent === wsd_id) {
+                row.classList.add("fall-detected");
+                break;
+              }
             }
-          }
+          });
         });
       }
     }
