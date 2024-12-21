@@ -5,40 +5,591 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GoldAid Safety System</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap"
       rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <style>
+      :root {
+        --primary-color: #2563eb;
+        --secondary-color: #1e40af;
+        --background-color: #f8fafc;
+        --card-background: #ffffff;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --danger-color: #ef4444;
+        --success-color: #22c55e;
+        --border-radius: 12px;
+        --transition-speed: 0.3s;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-primary);
+        line-height: 1.5;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: var(--card-background);
+        border-radius: var(--border-radius);
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+      }
+
+      .header h1 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .header h1 i {
+        font-size: 1.5rem;
+      }
+
+      .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background: var(--success-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .status-badge.offline {
+        background: var(--danger-color);
+      }
+
+      /* Desktop Table Styles */
+      .data-table-container {
+        background: var(--card-background);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        overflow-x: auto;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 0;
+      }
+
+      .data-table th,
+      .data-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .data-table th {
+        background: var(--background-color);
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+      }
+
+      .data-table tr {
+        transition: background-color var(--transition-speed);
+      }
+
+      .data-table tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+      }
+
+      /* Mobile Card Grid Styles */
+      .card-grid {
+        display: none;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+      }
+
+      .data-card {
+        background: var(--card-background);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        transition: transform var(--transition-speed);
+      }
+
+      .data-card:hover {
+        transform: translateY(-2px);
+      }
+
+      .data-card.fall-detected {
+        background-color: rgba(239, 68, 68, 0.1);
+        border-left: 4px solid var(--danger-color);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .device-ids {
+        font-weight: 600;
+      }
+
+      .card-body {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .vital-stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .vital-label {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+      }
+
+      .vital-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        background: var(--background-color);
+        font-weight: 500;
+      }
+
+      .vital-badge i {
+        font-size: 0.875rem;
+        color: var(--primary-color);
+      }
+
+      .card-footer {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+      }
+
+      .location-cell {
+        font-family: monospace;
+        color: var(--text-secondary);
+      }
+
+      .time-cell {
+        white-space: nowrap;
+        color: var(--text-secondary);
+      }
+
+      .error-message {
+        padding: 2rem;
+        text-align: center;
+        color: var(--danger-color);
+        font-weight: 500;
+        background: var(--card-background);
+        border-radius: var(--border-radius);
+        margin: 1rem;
+      }
+
+      /* Responsive Breakpoints */
+      @media (max-width: 1024px) {
+        .data-table th,
+        .data-table td {
+          padding: 0.75rem;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          margin: 1rem auto;
+        }
+
+        .header {
+          flex-direction: column;
+          gap: 1rem;
+          text-align: center;
+        }
+
+        .header h1 {
+          font-size: 1.5rem;
+        }
+
+        .data-table-container {
+          display: none;
+        }
+
+        .card-grid {
+          display: grid;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .card-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .vital-stat {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+      }
+
+      .nav-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background-color: var(--background-color);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+        border-radius: var(--border-radius);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all var(--transition-speed);
+      }
+
+      .nav-button:hover {
+        background-color: var(--primary-color);
+        color: white;
+      }
+    </style>
   </head>
   <body>
     <div class="container">
-      <h1 class="main-title">GoldAid Safety System</h1>
-      <table id="dataTable">
-        <thead>
-          <tr>
-            <th class="cell">WSD ID</th>
-            <th class="cell">BSD ID</th>
-            <th class="cell">Temperature</th>
-            <th class="cell">SpO2 (%)</th>
-            <th class="cell">Heart Rate</th>
-            <th class="cell">Location (lat, long)</th>
-            <th class="cell">Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Data will be populated here by JavaScript -->
-        </tbody>
-      </table>
-    </div>
+      <header class="header">
+        <h1>
+          <i class="fas fa-shield-heart"></i>
+          GoldAid Safety System
+        </h1>
+        <div class="status-badge">
+          <i class="fas fa-circle"></i>
+          System Online
+        </div>
+      </header>
 
-    <div id="graphContainer" class="graph-container">
-      <div class="graph-content">
-        <h2 id="graphTitle" class="graph-title"></h2>
-        <button id="closeGraphBtn" class="close-btn">&times;</button>
-        <iframe id="graphFrame" class="graph-frame" frameborder="0"></iframe>
+      <!-- Desktop Table View -->
+      <div class="data-table-container">
+        <table class="data-table" id="dataTable">
+          <thead>
+            <tr>
+              <th>WSD ID</th>
+              <th>BSD ID</th>
+              <th>Temperature</th>
+              <th>SpO2</th>
+              <th>Heart Rate</th>
+              <th>Location</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Data will be populated here by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Card Grid View -->
+      <div class="card-grid" id="cardGrid">
+        <!-- Data will be populated here by JavaScript -->
       </div>
     </div>
 
-    <script src="main.js"></script>
+    <div
+      style="
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        width: 100%;
+        justify-content: center;
+        margin-top: 2rem;
+      "
+    >
+      <a
+        href="https://avi1o1.github.io/GoldAid/UserDashboard/backup.html"
+        class="nav-button"
+      >
+        <i class="fas fa-clock-rotate-left"></i>
+        Old View
+      </a>
+    </div>
   </body>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const CONFIG = {
+        vitalsChannelID: "2787553",
+        vitalsReadAPI: "B9VN706EGIISH9L5",
+        alertsChannelID: "2787587",
+        alertsReadAPI: "1FM4WTY1P5LEXSIV",
+        updateInterval: 2000,
+      };
+
+      function formatVitalValue(value, type) {
+        const icons = {
+          temperature: "fa-thermometer-half",
+          spo2: "fa-lungs",
+          heartRate: "fa-heart-pulse",
+        };
+
+        const units = {
+          temperature: "°C",
+          spo2: "%",
+          heartRate: "bpm",
+        };
+
+        return `<span class="vital-badge">
+            <i class="fas ${icons[type]}"></i>
+            ${value}${units[type]}
+        </span>`;
+      }
+
+      function formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        const timeString = date.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        const dateString = date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        return `${dateString}, ${timeString}`;
+      }
+
+      function createDataCard(
+        wsd_id,
+        bsd_id,
+        temp,
+        spo2,
+        hr,
+        lat,
+        lon,
+        timestamp
+      ) {
+        return `
+            <div class="data-card" data-wsd="${wsd_id}">
+                <div class="card-header">
+                    <div class="device-ids">
+                        <i class="fas fa-microchip"></i>
+                        WSD: ${wsd_id} / BSD: ${bsd_id}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="vital-stat">
+                        <span class="vital-label">Temperature</span>
+                        ${formatVitalValue(temp, "temperature")}
+                    </div>
+                    <div class="vital-stat">
+                        <span class="vital-label">SpO2</span>
+                        ${formatVitalValue(spo2, "spo2")}
+                    </div>
+                    <div class="vital-stat">
+                        <span class="vital-label">Heart Rate</span>
+                        ${formatVitalValue(hr, "heartRate")}
+                    </div>
+                    <div class="vital-stat">
+                        <span class="vital-label">Location</span>
+                        <span class="location-cell">${lat}, ${lon}</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <i class="fas fa-clock"></i>
+                    ${formatTimestamp(timestamp)}
+                </div>
+            </div>
+        `;
+      }
+
+      function updateTable(nodeData) {
+        const tableBody = document.querySelector("#dataTable tbody");
+        const cardGrid = document.querySelector("#cardGrid");
+        tableBody.innerHTML = "";
+        cardGrid.innerHTML = "";
+
+        if (nodeData.feeds && nodeData.feeds.length > 0) {
+          const latestEntry = nodeData.feeds[0];
+
+          for (let i = 1; i <= 8; i++) {
+            let content = latestEntry[`field${i}`] || "NULL";
+            if (content === "NULL") continue;
+
+            const [bsd_id, data] = content.split("-");
+            const dataPoints = data.split(";");
+
+            for (let i = dataPoints.length - 1; i >= 0; i--) {
+              const dataPoint = dataPoints[i];
+              if (dataPoint === "") continue;
+
+              const [wsd_id, vitals] = dataPoint.split(":");
+              const [temp, spo2, hr, lat, lon] = vitals.split(",");
+
+              // Update table view
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                        <td>${wsd_id}</td>
+                        <td>${bsd_id}</td>
+                        <td>${formatVitalValue(temp, "temperature")}</td>
+                        <td>${formatVitalValue(spo2, "spo2")}</td>
+                        <td>${formatVitalValue(hr, "heartRate")}</td>
+                        <td class="location-cell">${lat}, ${lon}</td>
+                        <td class="time-cell">${formatTimestamp(
+                          nodeData.feeds[0].created_at
+                        )}</td>
+                    `;
+              tableBody.appendChild(row);
+
+              // Update card view
+              cardGrid.innerHTML += createDataCard(
+                wsd_id,
+                bsd_id,
+                temp,
+                spo2,
+                hr,
+                lat,
+                lon,
+                nodeData.feeds[0].created_at
+              );
+            }
+          }
+        }
+
+        if (tableBody.children.length === 0) {
+          const errorMessage = `
+                <td colspan="7" class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    No data available
+                </td>
+            `;
+          tableBody.innerHTML = `<tr>${errorMessage}</tr>`;
+          cardGrid.innerHTML = `<div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                No data available
+            </div>`;
+
+          updateSystemStatus(false);
+        } else {
+          updateSystemStatus(true);
+        }
+      }
+
+      function updateSystemStatus(isOnline) {
+        const statusBadge = document.querySelector(".status-badge");
+        if (isOnline) {
+          statusBadge.classList.remove("offline");
+          statusBadge.innerHTML = '<i class="fas fa-circle"></i> System Online';
+        } else {
+          statusBadge.classList.add("offline");
+          statusBadge.innerHTML =
+            '<i class="fas fa-circle"></i> System Offline';
+        }
+      }
+
+      function updateFall(nodeData) {
+        if (nodeData.feeds && nodeData.feeds.length > 0) {
+          const latestEntry = nodeData.feeds[0];
+
+          for (let i = 1; i <= 8; i++) {
+            let data = latestEntry[`field${i}`] || "NULL";
+            if (data === "NULL") continue;
+
+            const dataPoints = data.split(";");
+
+            dataPoints.forEach((dataPoint) => {
+              const [bsd_id, wsd_ids_str] = dataPoint.split("-");
+              const wsd_ids = wsd_ids_str.split(";");
+
+              wsd_ids.forEach((wsd_id) => {
+                // Update table rows
+                const tableRows = document.querySelectorAll(
+                  "#dataTable tbody tr"
+                );
+                tableRows.forEach((row) => {
+                  if (row.children[0].textContent === wsd_id) {
+                    row.classList.add("fall-detected");
+                  }
+                });
+
+                // Update cards
+                const cards = document.querySelectorAll(".data-card");
+                cards.forEach((card) => {
+                  if (card.dataset.wsd === wsd_id) {
+                    card.classList.add("fall-detected");
+                  }
+                });
+              });
+            });
+          }
+        }
+      }
+
+      function updateData() {
+        // Fetch Vitals data
+        fetch(
+          `https://api.thingspeak.com/channels/${CONFIG.vitalsChannelID}/feeds.json?api_key=${CONFIG.vitalsReadAPI}&results=1`
+        )
+          .then((response) => {
+            if (!response.ok) throw new Error("Network response was not ok");
+            return response.json();
+          })
+          .then(updateTable)
+          .catch((error) => {
+            console.error("Error fetching or updating data:", error.message);
+            const errorMessage = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error loading data: ${error.message}
+                    </div>
+                `;
+            document.querySelector(
+              "#dataTable tbody"
+            ).innerHTML = `<tr><td colspan="7">${errorMessage}</td></tr>`;
+            document.querySelector("#cardGrid").innerHTML = errorMessage;
+          });
+
+        // Fetch Alerts data
+        fetch(
+          `https://api.thingspeak.com/channels/${CONFIG.alertsChannelID}/feeds.json?api_key=${CONFIG.alertsReadAPI}&results=1`
+        )
+          .then((response) => {
+            if (!response.ok) throw new Error("Network response was not ok");
+            return response.json();
+          })
+          .then(updateFall)
+          .catch((error) =>
+            console.error("Error fetching or updating alerts:", error.message)
+          );
+      }
+
+      // Initial data fetch and interval update
+      updateData();
+      setInterval(updateData, CONFIG.updateInterval);
+    });
+  </script>
 </html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoldAid Safety System</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="main-title">GoldAid Safety System</h1>
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th class="cell">WSD ID</th>
+            <th class="cell">BSD ID</th>
+            <th class="cell">Temperature</th>
+            <th class="cell">SpO2 (%)</th>
+            <th class="cell">Heart Rate</th>
+            <th class="cell">Location (lat, long)</th>
+            <th class="cell">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data will be populated here by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+    <div id="graphContainer" class="graph-container">
+      <div class="graph-content">
+        <h2 id="graphTitle" class="graph-title"></h2>
+        <button id="closeGraphBtn" class="close-btn">&times;</button>
+        <iframe id="graphFrame" class="graph-frame" frameborder="0"></iframe>
+      </div>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
+</html>
