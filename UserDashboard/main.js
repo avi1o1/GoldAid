@@ -8,49 +8,50 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   function updateTable(nodeData) {
+    console.log(nodeData.feeds[0])
     const tableBody = document.querySelector("#dataTable tbody");
     tableBody.innerHTML = "";
-    
+  
     if (nodeData.feeds && nodeData.feeds.length > 0) {
       const latestEntry = nodeData.feeds[0];
-      
+  
       // loop to print all values from field1 to field8
       for (let i = 1; i <= 8; i++) {
-        data = latestEntry[`field${i}`] || "NULL";
-        if (data === "NULL") {
+        let content = latestEntry[`field${i}`] || "NULL";
+        if (content === "NULL") {
           continue;
         }
-        
+  
         // Extract details in format "<bsd_id>-<wsd_id>:<temp>,<spo2>,<hr>,<lat>,<lon>:...;"
-        const [bsd_id, data] = data.split("-");
+        const [bsd_id, data] = content.split("-");
         const dataPoints = data.split(";");
-
+  
         // iterate over each data point and extract values
-        for (let i = dataPoints.length-1; i >= 0; i--) {
+        for (let i = dataPoints.length - 1; i >= 0; i--) {
           const dataPoint = dataPoints[i];
-
+          if (dataPoint === "") {
+            continue;
+          }
+  
           const [wsd_id, vitals] = dataPoint.split(":");
           const [temp, spo2, hr, lat, lon] = vitals.split(",");
-          const cellValues = [wsd_id, bsd_id, temp, spo2, hr, `${lat}, ${lon}`, latestEntry.updated_at];
+          const cellValues = [wsd_id, bsd_id, temp, spo2, hr, `${lat}, ${lon}`, new Date(nodeData.feeds[0].created_at).toLocaleString()];
           // console.log(cellValues);
-
+  
           // Add values to table
           const valuesRow = document.createElement("tr");
-          const nodeCell = document.createElement("td");
-          nodeCell.textContent = `${nodeData.channel.id}`;
-          valuesRow.appendChild(nodeCell);
   
-          cellValues.forEach((value, index) => {
+          cellValues.forEach((value) => {
             const cell = document.createElement("td");
             cell.textContent = value;
             valuesRow.appendChild(cell);
           });
-          
+  
           tableBody.appendChild(valuesRow);
         }
       }
     }
-
+  
     if (tableBody.children.length === 0) {
       console.log("No data or empty feeds for all nodes.");
       const errorRow = document.createElement("tr");
@@ -59,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
       errorCell.textContent = "No data or empty feeds for all nodes.";
       errorCell.classList.add("error-message");
       errorRow.appendChild(errorCell);
-      tableBody.appendChild(errorRow);  
+      tableBody.appendChild(errorRow);
     }
   }
 
@@ -69,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
       
       // loop to print all values from field1 to field8
       for (let i = 1; i <= 8; i++) {
-        data = latestEntry[`field${i}`] || "NULL";
+        let data = latestEntry[`field${i}`] || "NULL";
         if (data === "NULL") {
           continue;
         }
