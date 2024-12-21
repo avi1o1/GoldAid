@@ -7,7 +7,9 @@ body {
 }
 
 .container {
+  width: 80%;
   max-width: 1200px;
+  overflow-x: auto;
   margin: 2rem auto;
   padding: 2rem;
   background-color: #ffffff;
@@ -27,7 +29,10 @@ table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  margin-top: 1.5rem;
+}
+
+.cell {
+  min-width: 69px;
 }
 
 .error-message {
