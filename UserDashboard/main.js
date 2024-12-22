@@ -89,7 +89,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const tableBody = document.querySelector("#dataTable tbody");
         const rows = tableBody.children;
         
-        console.log(wsd_ids);
         wsd_ids.forEach((wsd_id) => {
           if (wsd_id === "") {
             return;
