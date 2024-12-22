@@ -26,10 +26,10 @@ WiFiClient client;
 // ThingSpeak
 // TODO: Replace with ThingSpeak channel IDs and write API keys
 unsigned long vitalsChannelID = 1234567;
-const char *vitalsWriteAPIKey = "WRITE_API_KEY";
+const char *vitalsWriteAPIKey = "VITALS_WRITE_API_KEY";
 
 unsigned long alertsChannelID = 1234567;
-const char *alertsWriteAPIKey = "WRITE_API_KEY";
+const char *alertsWriteAPIKey = "ALERTS_WRITE_API_KEY";
 
 unsigned long lastThingSpeakUpdate = 0;
 
@@ -52,7 +52,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 // Timing
 #define BROADCAST_INTERVAL 5000    // 5 seconds
 #define RECEIVE_DURATION 30000     // 1 minute
-#define THINGSPEAK_INTERVAL 15000; // 15 seconds
+#define THINGSPEAK_INTERVAL 15000 // 15 seconds
 
 // Storage for IDs, RSSIs, and vitals
 struct TxInfo
@@ -149,11 +149,10 @@ void loop()
   while (receiving && currentMillis - startTime < 30000)
   {
     // Serial.println("## Inside receiving");
+    checkForAlerts();
     receiveID();
     currentMillis = millis();
     sortTxDevicesByRSSI();
-
-    checkForAlerts();
   }
   displayLatestArray();
   displayTxDevices();
@@ -176,10 +175,12 @@ void checkForAlerts()
     {
 
       // Extracting deviceID from "ALERT:<deviceID>"
-      char string[12];
-      message.toCharArray(string, sizeof(string));
-      char *deviceID = strtok(string, ":");
-      deviceID = strtok(NULL, ":");
+      //char string[12];
+      //message.toCharArray(string, sizeof(string));
+      //char *deviceID = strtok(string, ":");
+      //deviceID = strtok(NULL, ":");
+
+      String deviceID = message.substring(6);
 
       Serial.println("*** " + message + " ***");
       Serial.print("From ID: ");
@@ -197,14 +198,18 @@ void checkForAlerts()
       display.display();
 
       // Set alert flag for the corresponding device
+
       for (int i = 0; i < txCount; i++)
       {
-        if (txDevices[i].id == deviceID)
+        if (txDevices[i].id.compareTo(deviceID) == 0)
         {
           txDevices[i].vitals.alert = true;
+          Serial.print("Alert flag set for ");
+          Serial.println(deviceID);
           break;
         }
       }
+
     }
   }
 }
@@ -228,8 +233,9 @@ void receiveID()
   if (packetSize)
   {
     String id = "";
-    while (LoRa.available())
+    while (LoRa.available()) {
       id += (char)LoRa.read();
+    }
     int rssi = LoRa.packetRssi();
     Serial.print("Received ID: ");
     Serial.print(id);
@@ -370,8 +376,9 @@ void sendBeaconsToTxDevices()
   sendVitalsAndAlertsToThingSpeak();
 }
 
-void sendVitalsAndAlertsToThingSpeak()
-{
+/*
+  void sendVitalsAndAlertsToThingSpeak()
+  {
   if (millis() - lastThingSpeakUpdate < THINGSPEAK_INTERVAL)
     return;
 
@@ -413,7 +420,56 @@ void sendVitalsAndAlertsToThingSpeak()
     Serial.println("Problem updating ThingSpeak alerts");
 
   lastThingSpeakUpdate = millis();
+  }
+*/
+
+void sendVitalsAndAlertsToThingSpeak()
+{
+  if (millis() - lastThingSpeakUpdate < THINGSPEAK_INTERVAL) {
+    return;
+  }
+  String vitalsMessage = "";
+  vitalsMessage += String(BSD_ID) + "-";
+
+  String alertMessage = "";
+  alertMessage += String(BSD_ID) + "-";
+
+  for (int i = 0; i < txCount; i++)
+  {
+    vitalsMessage += txDevices[i].id + ":";
+    vitalsMessage += String(txDevices[i].vitals.temperature) + ",";
+    // Uncomment these lines if diastolic and systolic are required
+    // vitalsMessage += String(txDevices[i].vitals.diastolic) + ",";
+    // vitalsMessage += String(txDevices[i].vitals.systolic) + ",";
+    vitalsMessage += String(txDevices[i].vitals.spo2) + ",";
+    vitalsMessage += String(txDevices[i].vitals.heartRate) + ",";
+    vitalsMessage += String(txDevices[i].vitals.latitude) + ",";
+    vitalsMessage += String(txDevices[i].vitals.longitude) + ";";
+
+    if (txDevices[i].vitals.alert)
+      alertMessage += txDevices[i].id + ";";
+  }
+
+  // Make sure you use valid ThingSpeak fields (1-8)
+  ThingSpeak.setField(1, vitalsMessage); // Set to field 1 for vitals
+  int response = ThingSpeak.writeFields(vitalsChannelID, vitalsWriteAPIKey);
+
+  if (response == 200)
+    Serial.println("ThingSpeak vitals update successful");
+  else
+    Serial.println("Problem updating ThingSpeak vitals");
+
+  ThingSpeak.setField(2, alertMessage); // Set to field 2 for alerts
+  response = ThingSpeak.writeFields(alertsChannelID, alertsWriteAPIKey);
+
+  if (response == 200)
+    Serial.println("ThingSpeak alerts update successful");
+  else
+    Serial.println("Problem updating ThingSpeak alerts");
+
+  lastThingSpeakUpdate = millis();
 }
+
 
 void sendBeacon(String id)
 {
@@ -507,19 +563,19 @@ void waitForBeaconAck(String id, int i)
       return;
 
       /*
-      Serial.print("Beacon received by: ");
-      Serial.println(id);
-      Serial.print("TX String: ");
-      Serial.println(tx_string);
+        Serial.print("Beacon received by: ");
+        Serial.println(id);
+        Serial.print("TX String: ");
+        Serial.println(tx_string);
 
-      display.clearDisplay();
-      display.setCursor(0, 0);
-      display.print("Beacon received by: ");
-      display.println(id);
-      display.print("TX String: ");
-      display.println(tx_string);
-      display.display();
-      return;
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.print("Beacon received by: ");
+        display.println(id);
+        display.print("TX String: ");
+        display.println(tx_string);
+        display.display();
+        return;
       */
     }
   }

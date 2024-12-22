@@ -120,7 +120,7 @@ void loadAlgomodeParameters()
   MAX32664.loadAlgorithmParameters(&algoParameters);
 }
 
-String deviceID = "TX3"; // Change this ID for each Tx device
+String deviceID = "TX1"; // Change this ID for each Tx device
 bool sendingID = false;
 bool ack_flag;
 
@@ -185,7 +185,7 @@ void setup()
 
   display.clearDisplay();
   display.setCursor(0, 22);
-  display.print("Caliberation Started");
+  display.print("Calibration Started");
   display.display();
 
   bool ret = MAX32664.startBPTcalibration();
@@ -208,6 +208,11 @@ void setup()
     delay(10000);
   }
 
+  display.clearDisplay();
+  display.setCursor(0, 22);
+  display.print("Calibration Done");
+  display.display();
+  
   // MAX32664.enableInterruptPin();
   Serial.println("Getting the device ready..");
   delay(1000);
@@ -530,7 +535,7 @@ bool fallDetection()
     Serial.println("********NOT FALL********");
   }
 
-  if (fall_certain && (mag > 2))
+  if (fall_certain && (mag > 6))
   { // XXXXXXXXX previously 6 {
     fall_certain = false;
     Serial.println();
@@ -577,6 +582,7 @@ bool fallDetection()
   return false;
 }
 
+/*
 bool buttonPressed()
 {
   if (digitalRead(buttonPin1) == LOW && digitalRead(buttonPin2) == LOW)
@@ -591,7 +597,7 @@ bool buttonPressed()
       {                     // If both buttons have been pressed for at least 2 seconds
         pressStartTime = 0; // Reset the press start time
         LoRa.beginPacket();
-        LoRa.print("SOS Alert");
+        LoRa.print("SOS ALERT");
         LoRa.endPacket();
 
         display.clearDisplay();
@@ -603,6 +609,52 @@ bool buttonPressed()
 
         Serial.println("Buttons pressed");
         Serial.println("****SOS Alert****");
+        return true; // Return true to indicate both buttons were pressed for 2 seconds
+      }
+    }
+  }
+  else
+  {
+    pressStartTime = 0; // Reset the press start time if buttons are not pressed together
+  }
+  return false; // Return false if both buttons are not pressed for 2 seconds
+}
+*/
+
+bool buttonPressed()
+{
+  if (digitalRead(buttonPin1) == LOW && digitalRead(buttonPin2) == LOW)
+  { // Check if both buttons are pressed
+    if (pressStartTime == 0)
+    {                            // If it's the first time both buttons are pressed
+      pressStartTime = millis(); // Record the start time
+    }
+    else
+    {
+      if (millis() - pressStartTime >= 2000)
+      {                     // If both buttons have been pressed for at least 2 seconds
+        pressStartTime = 0; // Reset the press start time
+        String alert = "ALERT:";
+        alert += deviceID;
+        LoRa.beginPacket();
+        LoRa.print(alert);
+        LoRa.endPacket();
+
+        display.clearDisplay();
+        display.setCursor(0, 22);
+        display.print("****SOS Alert****");
+        display.setCursor(0, 38);
+        display.print("Alert Sent");
+        display.display();
+
+        Serial.println("Buttons pressed");
+        Serial.println("****SOS Alert****");
+
+        // Changed print message to not device specific
+        Serial.print("Message sent from ");
+        Serial.print(deviceID);
+        Serial.println(": ALERT");
+        
         return true; // Return true to indicate both buttons were pressed for 2 seconds
       }
     }
