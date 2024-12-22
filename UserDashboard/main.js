@@ -7,61 +7,67 @@ document.addEventListener("DOMContentLoaded", function () {
     updateInterval: 2000,
   };
 
-  function updateTable(nodeData) {
-    console.log(nodeData.feeds[0])
-    const tableBody = document.querySelector("#dataTable tbody");
-    tableBody.innerHTML = "";
-  
-    if (nodeData.feeds && nodeData.feeds.length > 0) {
-      const latestEntry = nodeData.feeds[0];
-  
-      // loop to print all values from field1 to field8
-      for (let i = 1; i <= 8; i++) {
-        let content = latestEntry[`field${i}`] || "NULL";
-        if (content === "NULL") {
-          continue;
-        }
-  
-        // Extract details in format "<bsd_id>-<wsd_id>:<temp>,<spo2>,<hr>,<lat>,<lon>;<wsd_id>...;"
-        const [bsd_id, data] = content.split("-");
-        const dataPoints = data.split(";");
-  
-        // iterate over each data point and extract values
-        for (let i = dataPoints.length - 1; i >= 0; i--) {
-          const dataPoint = dataPoints[i];
-          if (dataPoint === "") {
-            continue;
+    function updateTable(nodeData) {
+      const tableBody = document.querySelector("#dataTable tbody");
+      
+      if (nodeData.feeds && nodeData.feeds.length > 0) {
+          const latestEntry = nodeData.feeds[0];
+          
+          for (let i = 1; i <= 8; i++) {
+              let content = latestEntry[`field${i}`] || "NULL";
+              if (content === "NULL") continue;
+              
+              const [bsd_id, data] = content.split("-");
+              const dataPoints = data.split(";");
+              
+              dataPoints.forEach(dataPoint => {
+                  if (dataPoint === "") return;
+                  
+                  const [wsd_id, vitals] = dataPoint.split(":");
+                  if (!wsd_id || !vitals) return;
+                  
+                  const [temp, spo2, hr, lat, lon] = vitals.split(",");
+                  const cellValues = [
+                      wsd_id, 
+                      bsd_id, 
+                      temp, 
+                      spo2, 
+                      hr, 
+                      `${lat}, ${lon}`, 
+                      new Date(latestEntry.created_at).toLocaleString()
+                  ];
+                  
+                  // Check for existing row with matching wsd_id
+                  const existingRow = Array.from(tableBody.children)
+                      .find(row => row.children[0]?.textContent === wsd_id);
+                  
+                  if (existingRow) {
+                      // Update existing row
+                      cellValues.forEach((value, index) => {
+                          existingRow.children[index].textContent = value;
+                      });
+                  } else {
+                      // Add new row
+                      const newRow = document.createElement("tr");
+                      cellValues.forEach(value => {
+                          const cell = document.createElement("td");
+                          cell.textContent = value;
+                          newRow.appendChild(cell);
+                      });
+                      tableBody.appendChild(newRow);
+                  }
+              });
           }
-  
-          const [wsd_id, vitals] = dataPoint.split(":");
-          const [temp, spo2, hr, lat, lon] = vitals.split(",");
-          const cellValues = [wsd_id, bsd_id, temp, spo2, hr, `${lat}, ${lon}`, new Date(nodeData.feeds[0].created_at).toLocaleString()];
-          // console.log(cellValues);
-  
-          // Add values to table
-          const valuesRow = document.createElement("tr");
-  
-          cellValues.forEach((value) => {
-            const cell = document.createElement("td");
-            cell.textContent = value;
-            valuesRow.appendChild(cell);
-          });
-  
-          tableBody.appendChild(valuesRow);
-        }
+      } else if (tableBody.children.length === 0) {
+          // Only show error if table is empty
+          const errorRow = document.createElement("tr");
+          const errorCell = document.createElement("td");
+          errorCell.setAttribute("colspan", 8);
+          errorCell.textContent = "No data or empty feeds for all nodes.";
+          errorCell.classList.add("error-message");
+          errorRow.appendChild(errorCell);
+          tableBody.appendChild(errorRow);
       }
-    }
-  
-    if (tableBody.children.length === 0) {
-      console.log("No data or empty feeds for all nodes.");
-      const errorRow = document.createElement("tr");
-      const errorCell = document.createElement("td");
-      errorCell.setAttribute("colspan", 8);
-      errorCell.textContent = "No data or empty feeds for all nodes.";
-      errorCell.classList.add("error-message");
-      errorRow.appendChild(errorCell);
-      tableBody.appendChild(errorRow);
-    }
   }
 
   function updateFall(nodeData) {
