@@ -12,7 +12,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-// BSD ID
+// BSD ID (1-indexed) (keep different for different BSDs)
+// TODO: Replace with the BSD ID
 #define BSD_ID 1
 
 // WiFi
@@ -32,6 +33,7 @@ unsigned long alertsChannelID = 1234567;
 const char *alertsWriteAPIKey = "ALERTS_WRITE_API_KEY";
 
 unsigned long lastThingSpeakUpdate = 0;
+String lastAlertMessage = "";
 
 // LoRa radio pins
 const int csPin = 5;          // LoRa radio chip select
@@ -50,8 +52,8 @@ const long frequency = 433E6; // LoRa frequency
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // Timing
-#define BROADCAST_INTERVAL 5000    // 5 seconds
-#define RECEIVE_DURATION 30000     // 1 minute
+#define BROADCAST_INTERVAL 5000   // 5 seconds
+#define RECEIVE_DURATION 30000    // 1 minute
 #define THINGSPEAK_INTERVAL 15000 // 15 seconds
 
 // Storage for IDs, RSSIs, and vitals
@@ -175,10 +177,10 @@ void checkForAlerts()
     {
 
       // Extracting deviceID from "ALERT:<deviceID>"
-      //char string[12];
-      //message.toCharArray(string, sizeof(string));
-      //char *deviceID = strtok(string, ":");
-      //deviceID = strtok(NULL, ":");
+      // char string[12];
+      // message.toCharArray(string, sizeof(string));
+      // char *deviceID = strtok(string, ":");
+      // deviceID = strtok(NULL, ":");
 
       String deviceID = message.substring(6);
 
@@ -209,7 +211,6 @@ void checkForAlerts()
           break;
         }
       }
-
     }
   }
 }
@@ -233,7 +234,8 @@ void receiveID()
   if (packetSize)
   {
     String id = "";
-    while (LoRa.available()) {
+    while (LoRa.available())
+    {
       id += (char)LoRa.read();
     }
     int rssi = LoRa.packetRssi();
@@ -425,7 +427,8 @@ void sendBeaconsToTxDevices()
 
 void sendVitalsAndAlertsToThingSpeak()
 {
-  if (millis() - lastThingSpeakUpdate < THINGSPEAK_INTERVAL) {
+  if (millis() - lastThingSpeakUpdate < THINGSPEAK_INTERVAL)
+  {
     return;
   }
   String vitalsMessage = "";
@@ -450,8 +453,7 @@ void sendVitalsAndAlertsToThingSpeak()
       alertMessage += txDevices[i].id + ";";
   }
 
-  // Make sure you use valid ThingSpeak fields (1-8)
-  ThingSpeak.setField(1, vitalsMessage); // Set to field 1 for vitals
+  ThingSpeak.setField(BSD_ID, vitalsMessage);
   int response = ThingSpeak.writeFields(vitalsChannelID, vitalsWriteAPIKey);
 
   if (response == 200)
@@ -459,17 +461,22 @@ void sendVitalsAndAlertsToThingSpeak()
   else
     Serial.println("Problem updating ThingSpeak vitals");
 
-  ThingSpeak.setField(2, alertMessage); // Set to field 2 for alerts
-  response = ThingSpeak.writeFields(alertsChannelID, alertsWriteAPIKey);
+  if (lastAlertMessage != alertMessage)
+  {
+    ThingSpeak.setField(BSD_ID, alertMessage);
+    response = ThingSpeak.writeFields(alertsChannelID, alertsWriteAPIKey);
 
-  if (response == 200)
-    Serial.println("ThingSpeak alerts update successful");
-  else
-    Serial.println("Problem updating ThingSpeak alerts");
+    if (response == 200)
+    {
+      Serial.println("ThingSpeak alerts update successful");
+      lastAlertMessage = alertMessage;
+    }
+    else
+      Serial.println("Problem updating ThingSpeak alerts");
+  }
 
   lastThingSpeakUpdate = millis();
 }
-
 
 void sendBeacon(String id)
 {
