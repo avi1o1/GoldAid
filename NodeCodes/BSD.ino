@@ -175,42 +175,40 @@ void checkForAlerts()
     // If the message contains "ALERT", display it
     if (message.indexOf("ALERT") != -1)
     {
+      parseAlert(message);
+      return;
+    }
+  }
+}
 
-      // Extracting deviceID from "ALERT:<deviceID>"
-      // char string[12];
-      // message.toCharArray(string, sizeof(string));
-      // char *deviceID = strtok(string, ":");
-      // deviceID = strtok(NULL, ":");
+void parseAlert(String message) {
+  String deviceID = message.substring(6);
 
-      String deviceID = message.substring(6);
+  Serial.println("*** " + message + " ***");
+  Serial.print("From ID: ");
+  Serial.println(deviceID);
 
-      Serial.println("*** " + message + " ***");
-      Serial.print("From ID: ");
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.print("*** ALERT ***");
+  display.println();
+  display.println(message);
+  display.print("From ID: ");
+  display.println(deviceID);
+  display.display();
+
+  // Set alert flag for the corresponding device
+
+  for (int i = 0; i < txCount; i++)
+  {
+    if (txDevices[i].id.compareTo(deviceID) == 0)
+    {
+      txDevices[i].vitals.alert = true;
+      Serial.print("Alert flag set for ");
       Serial.println(deviceID);
-
-      display.clearDisplay();
-      display.setCursor(0, 0);
-      display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-      display.print("*** ALERT ***");
-      display.println();
-      display.println(message);
-      display.print("From ID: ");
-      display.println(deviceID);
-      display.display();
-
-      // Set alert flag for the corresponding device
-
-      for (int i = 0; i < txCount; i++)
-      {
-        if (txDevices[i].id.compareTo(deviceID) == 0)
-        {
-          txDevices[i].vitals.alert = true;
-          Serial.print("Alert flag set for ");
-          Serial.println(deviceID);
-          break;
-        }
-      }
+      break;
     }
   }
 }
@@ -238,6 +236,14 @@ void receiveID()
     {
       id += (char)LoRa.read();
     }
+
+    // If stay ALERT message received handle it accordingly
+    if (id.indexOf("ALERT") != -1)
+    {
+      parseAlert(id);
+      return;
+    }
+
     int rssi = LoRa.packetRssi();
     Serial.print("Received ID: ");
     Serial.print(id);
@@ -544,6 +550,13 @@ void waitForBeaconAck(String id, int i)
       // Check if the message is an acknowledgment with the expected format
       // if (message.startsWith("Beacon received " + id)) {
       // String tx_string = message.substring(("Beacon received " + id).length() + 1); // Extract the TX string
+
+      // If ALERT handle acordingly and move to next iteration
+      if (message.indexOf("ALERT") != -1)
+      {
+        parseAlert(message);
+        continue;
+      }
 
       Serial.println(message);
 
