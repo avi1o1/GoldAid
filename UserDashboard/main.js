@@ -7,6 +7,26 @@ document.addEventListener("DOMContentLoaded", function () {
     updateInterval: 2000,
   };
 
+  // Helper function to manage cookies
+  function setCookie(name, value, days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    const expires = "expires=" + date.toUTCString();
+    document.cookie = name + "=" + value + ";" + expires + ";path=/";
+  }
+
+  function getCookie(name) {
+    const cookieName = name + "=";
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      let cookie = cookies[i].trim();
+      if (cookie.indexOf(cookieName) === 0) {
+        return cookie.substring(cookieName.length, cookie.length);
+      }
+    }
+    return "";
+  }
+
   function updateTable(nodeData) {
     const tableBody = document.querySelector("#dataTable tbody");
 
@@ -54,14 +74,36 @@ document.addEventListener("DOMContentLoaded", function () {
               cell.textContent = value;
               newRow.appendChild(cell);
             });
+
+            // Add Resolve button cell
+            const buttonCell = document.createElement("td");
+            const resolveButton = document.createElement("button");
+            resolveButton.textContent = "Resolve";
+            resolveButton.classList.add("resolve-button");
+            buttonCell.style.display = "none";
+
+            // Add click handler for resolve button
+            resolveButton.addEventListener("click", function () {
+              const timestamp = new Date(latestEntry.created_at).getTime();
+              const buttonCell = resolveButton?.parentElement;
+              newRow.classList.remove("fall-detected");
+              buttonCell.style.display = "none";
+              resolveButton.style.display = "none";
+              
+              setCookie(`resolved_${wsd_id}`, timestamp, 30);
+            });
+
+            buttonCell.appendChild(resolveButton);
+            newRow.appendChild(buttonCell);
+
             tableBody.appendChild(newRow);
           }
         });
       }
     }
-    
-    // Only show error if table is empty
-    else if (tableBody.children.length === 0) {
+
+    // Show error if table is empty
+    if (tableBody.children.length === 0) {
       const errorRow = document.createElement("tr");
       const errorCell = document.createElement("td");
       errorCell.setAttribute("colspan", 8);
@@ -69,12 +111,18 @@ document.addEventListener("DOMContentLoaded", function () {
       errorCell.classList.add("error-message");
       errorRow.appendChild(errorCell);
       tableBody.appendChild(errorRow);
+    } else {
+      const errorRow = tableBody.querySelector('.error-message')?.parentElement;
+      if (errorRow) {
+        errorRow.remove();
+      }
     }
   }
 
   function updateFall(nodeData) {
     if (nodeData.feeds && nodeData.feeds.length > 0) {
       const latestEntry = nodeData.feeds[0];
+      const currentTimestamp = new Date(latestEntry.created_at).getTime();
 
       // loop to print all values from field1 to field8
       for (let i = 1; i <= 8; i++) {
@@ -88,20 +136,33 @@ document.addEventListener("DOMContentLoaded", function () {
         const wsd_ids = wsd_ids_str.split(";");
         const tableBody = document.querySelector("#dataTable tbody");
         const rows = tableBody.children;
-        
+
         wsd_ids.forEach((wsd_id) => {
           if (wsd_id === "") {
             return;
           }
 
+          // Check if this alert is after the last resolved time
+          const lastResolved = getCookie(`resolved_${wsd_id}`);
+          const shouldShowAlert = !lastResolved || currentTimestamp > parseInt(lastResolved);
+
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             if (row.children[0].textContent === wsd_id) {
-              row.classList.add("fall-detected");
+              if (shouldShowAlert) {
+                row.classList.add("fall-detected");
+                // Show resolve button
+                const resolveButton = row.querySelector(".resolve-button");
+                const buttonCell = resolveButton?.parentElement;
+                if (resolveButton && buttonCell) {
+                    buttonCell.style.display = "table-cell";
+                    resolveButton.style.display = "block";
+                }
+              }
               break;
             }
           }
-          });
+        });
       }
     }
   }

@@ -135,6 +135,19 @@ td:hover {
   opacity: 1 !important;
 }
 
+.resolve-button {
+  padding: 6px 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.resolve-button:hover {
+  background-color: #45a049;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 1rem;
