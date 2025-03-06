@@ -292,13 +292,6 @@
         <i class="fas fa-bell-slash"></i>
         Cancel Alerts
       </button>
-      <a
-        href="https://avi1o1.github.io/GoldAid/UserDashboard/backup.html"
-        class="nav-button"
-      >
-        <i class="fas fa-clock-rotate-left"></i>
-        Old View
-      </a>
     </div>
   </body>
   <script>
@@ -395,40 +388,56 @@
 
       function updateData(nodeData) {
         const cardGrid = document.querySelector("#cardGrid");
-        cardGrid.innerHTML = "";
-
+        
         if (nodeData.feeds && nodeData.feeds.length > 0) {
           const latestEntry = nodeData.feeds[0];
-
+          let updatedDevices = new Set(); // Track which devices we've updated
+          
           for (let i = 1; i <= 8; i++) {
             let content = latestEntry[`field${i}`] || "NULL";
             if (content === "NULL") continue;
-
+      
             const [bsd_id, data] = content.split("-");
             const dataPoints = data.split(";");
-
-            for (let i = dataPoints.length - 1; i >= 0; i--) {
-              const dataPoint = dataPoints[i];
+      
+            for (let j = dataPoints.length - 1; j >= 0; j--) {
+              const dataPoint = dataPoints[j];
               if (dataPoint === "") continue;
-
+      
               const [wsd_id, vitals] = dataPoint.split(":");
+              if (!wsd_id || !vitals) continue;
+              
               const [temp, spo2, hr, lat, lon] = vitals.split(",");
-
-              // Update card view
-              cardGrid.innerHTML += createDataCard(
-                wsd_id,
-                bsd_id,
-                temp,
-                spo2,
-                hr,
-                lat,
-                lon,
-                nodeData.feeds[0].created_at
-              );
+              updatedDevices.add(wsd_id);
+              
+              // Check if card already exists
+              let card = document.querySelector(`.data-card[data-wsd="${wsd_id}"]`);
+              
+              if (card) {
+                // Update existing card
+                const tempElement = card.querySelector('.vital-stat:nth-child(1) .vital-badge');
+                const spo2Element = card.querySelector('.vital-stat:nth-child(2) .vital-badge');
+                const hrElement = card.querySelector('.vital-stat:nth-child(3) .vital-badge');
+                const locationElement = card.querySelector('.location-cell');
+                const footerElement = card.querySelector('.card-footer');
+                
+                tempElement.innerHTML = `<i class="fas fa-thermometer-half"></i>${temp}°C`;
+                spo2Element.innerHTML = `<i class="fas fa-lungs"></i>${spo2}%`;
+                hrElement.innerHTML = `<i class="fas fa-heart-pulse"></i>${hr}bpm`;
+                locationElement.textContent = `${lat}, ${lon}`;
+                footerElement.innerHTML = `<i class="fas fa-clock"></i>${formatTimestamp(nodeData.feeds[0].created_at)}`;
+              } else {
+                // Add new card for this device
+                const newCardHTML = createDataCard(wsd_id, bsd_id, temp, spo2, hr, lat, lon, nodeData.feeds[0].created_at);
+                const tempContainer = document.createElement('div');
+                tempContainer.innerHTML = newCardHTML;
+                cardGrid.appendChild(tempContainer.firstElementChild);
+              }
             }
           }
         }
-
+      
+        // Show error if no data is available and no cards exist
         if (cardGrid.children.length === 0) {
           cardGrid.innerHTML = `<div class="error-message">
                   <i class="fas fa-exclamation-circle"></i>
@@ -439,7 +448,6 @@
           updateSystemStatus(true);
         }
       }
-
       function updateSystemStatus(isOnline) {
         const statusBadge = document.querySelector(".status-badge");
         if (isOnline) {
@@ -455,38 +463,109 @@
       function updateFall(nodeData) {
         if (nodeData.feeds && nodeData.feeds.length > 0) {
           const latestEntry = nodeData.feeds[0];
-
+          console.log("Processing alert data:", latestEntry);
+      
           for (let i = 1; i <= 8; i++) {
             let data = latestEntry[`field${i}`] || "NULL";
             if (data === "NULL") continue;
-            const alertTimestamp = new Date(
-              latestEntry["created_at"]
-            ).getTime();
-            const lastAlertCancelled =
-              document.cookie.indexOf("lastAlertCancelled") !== -1
-                ? parseInt(document.cookie.split("=")[1])
-                : 0;
-
-            if (alertTimestamp <= lastAlertCancelled) continue;
-
-            const [bsd_id, wsd_ids_str] = data.split("-");
+            
+            console.log(`Found alert data in field${i}:`, data);
+            
+            const alertTimestamp = new Date(latestEntry["created_at"]).getTime();
+            const lastAlertCancelled = document.cookie.indexOf("lastAlertCancelled") !== -1
+              ? parseInt(document.cookie.split("=")[1])
+              : 0;
+      
+            if (alertTimestamp <= lastAlertCancelled) {
+              console.log("Alert was already cancelled, skipping.");
+              continue;
+            }
+      
+            const parts = data.split("-");
+            if (parts.length < 2) {
+              console.log("Invalid alert data format:", data);
+              continue;
+            }
+            
+            const bsd_id = parts[0];
+            const wsd_ids_str = parts[1];
             const wsd_ids = wsd_ids_str.split(";");
-
+            
+            console.log(`Processing alerts for BSD: ${bsd_id}, WSDs:`, wsd_ids);
+      
             wsd_ids.forEach((wsd_id) => {
-              if (wsd_id === "") return;
-
-              // Update cards
-              const cards = document.querySelectorAll(".data-card");
-              cards.forEach((card) => {
-                if (card.dataset.wsd === wsd_id) {
-                  card.classList.add("fall-detected");
+              if (wsd_id === "") {
+                console.log("Empty WSD ID, skipping");
+                return;
+              }
+      
+              console.log(`Processing alert for WSD: ${wsd_id}`);
+              
+              // Find card for this WSD
+              const cardGrid = document.querySelector("#cardGrid");
+              let card = document.querySelector(`.data-card[data-wsd="${wsd_id}"]`);
+      
+              if (card) {
+                console.log(`Found existing card for WSD: ${wsd_id}, adding fall-detected class`);
+                card.classList.add("fall-detected");
+                
+                // Also add the warning note if it doesn't exist yet
+                if (!card.querySelector('.vital-stat .vital-label[style*="color: var(--danger-color)"]')) {
+                  const cardBody = card.querySelector('.card-body');
+                  const pendingNote = document.createElement('div');
+                  pendingNote.className = 'vital-stat';
+                  pendingNote.innerHTML = '<span class="vital-label" style="color: var(--danger-color);">⚠️ Fall detected!</span>';
+                  cardBody.prepend(pendingNote);
                 }
-              });
+              } else {
+                console.log(`No card exists for WSD: ${wsd_id}, creating placeholder card`);
+                
+                // No card exists for this WSD yet, create a new one with undefined values
+                const placeholderCard = `
+                  <div class="data-card fall-detected" data-wsd="${wsd_id}">
+                      <div class="card-header">
+                          <div class="device-ids">
+                              <i class="fas fa-microchip"></i>
+                              WSD: ${wsd_id} / BSD: ${bsd_id || "Unknown"}
+                          </div>
+                      </div>
+                      <div class="card-body">
+                          <div class="vital-stat">
+                              <span class="vital-label" style="color: var(--danger-color);">⚠️ Fall detected! Awaiting vitals data...</span>
+                          </div>
+                          <div class="vital-stat">
+                              <span class="vital-label">Temperature</span>
+                              <span class="vital-badge"><i class="fas fa-thermometer-half"></i>N/A°C</span>
+                          </div>
+                          <div class="vital-stat">
+                              <span class="vital-label">SpO2</span>
+                              <span class="vital-badge"><i class="fas fa-lungs"></i>N/A%</span>
+                          </div>
+                          <div class="vital-stat">
+                              <span class="vital-label">Heart Rate</span>
+                              <span class="vital-badge"><i class="fas fa-heart-pulse"></i>N/Abpm</span>
+                          </div>
+                          <div class="vital-stat">
+                              <span class="vital-label">Location</span>
+                              <span class="location-cell">N/A, N/A</span>
+                          </div>
+                      </div>
+                      <div class="card-footer">
+                          <i class="fas fa-clock"></i>
+                          ${formatTimestamp(latestEntry["created_at"])}
+                      </div>
+                  </div>`;
+      
+                console.log("Creating new placeholder card:", placeholderCard);
+                cardGrid.insertAdjacentHTML('beforeend', placeholderCard);
+              }
             });
           }
+        } else {
+          console.log("No alert feeds found in data");
         }
       }
-
+      
       function fetchData() {
         // Fetch Vitals data
         fetch(
